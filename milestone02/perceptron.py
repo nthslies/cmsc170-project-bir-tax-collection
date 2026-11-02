@@ -121,6 +121,73 @@ def predict_perceptron(x_test, w):
 
     return np.array(predictions, dtype = int)
 
+# function to evaluate based on metrics chosen
+def evaluate_model(y_actual, y_predicted):
+    # initialize confusion matrix where rows = actual classes, columns = predicted classes
+    confusion_matrix = np.zeros((2, 2), dtype = int)
+    # counts actual and predicted
+    for i in range(len(y_actual)):
+        actual = y_actual[i]
+        predicted = y_predicted[i]
+        confusion_matrix[actual][predicted] += 1
+    
+    # total correct predictions
+    correct = confusion_matrix[0][0] + confusion_matrix[1][1]
+    # total predictions
+    total = np.sum(confusion_matrix)
+    # accuracy
+    accuracy = correct / total if total != 0 else 0
+    precision_scores = []
+    recall_scores = []
+    f1_scores = []
+
+    # calculate metrics for each class
+    for class_id in range(2):
+        tp = confusion_matrix[class_id][class_id]
+        fp = np.sum(confusion_matrix[:, class_id]) - tp
+        fn = np.sum(confusion_matrix[class_id, :]) - tp
+        # precision
+        precision = (tp / (tp + fp)) if (tp + fp != 0) else 0
+        # recall
+        recall = (tp / (tp + fn)) if (tp + fn != 0) else 0
+        # F1-score
+        if precision + recall != 0:
+            f1 = 2 * precision * recall / (precision + recall)
+        else:
+            f1 = 0
+
+        precision_scores.append(precision)
+        recall_scores.append(recall)
+        f1_scores.append(f1)
+
+    # macro averages
+    macro_precision = np.mean(precision_scores)
+    macro_recall = np.mean(recall_scores)
+    macro_f1 = np.mean(f1_scores)
+
+    # displays confusion matrix
+    print("\n-----------CONFUSION MATRIX-----------")
+    print("                 Predicted")
+    print("                 Down   Up")
+    print(f"Actual Down      {confusion_matrix[0][0]:4d} {confusion_matrix[0][1]:4d}")
+    print(f"Actual Up        {confusion_matrix[1][0]:4d} {confusion_matrix[1][1]:4d}")
+
+    # displays evaluation metrics
+    print("\n----------EVALUATION METRICS----------")
+    print(f"Accuracy:        {accuracy:.4f}")
+    print(f"Macro Precision: {macro_precision:.4f}")
+    print(f"Macro Recall:    {macro_recall:.4f}")
+    print(f"Macro F1-Score:  {macro_f1:.4f}")
+
+    # displays metrics for each class
+    print("\n-----------PER-CLASS METRICS-----------")
+    class_names = ["Down", "Up"]
+    for i in range(2):
+        print(f"\nClass: {class_names[i]}")
+        print(f"Precision: {precision_scores[i]:.4f}")
+        print(f"Recall:    {recall_scores[i]:.4f}")
+        print(f"F1-Score:  {f1_scores[i]:.4f}")
+
 def main():
     # loads data
     x_train, y_train, x_test, y_test = load_data()
@@ -134,6 +201,8 @@ def main():
     w = train_perceptron(x_train, y_train)
     # predict testing data
     y_predicted = predict_perceptron(x_test, w)
+    # evaluate predictions
+    evaluate_model(y_test, y_predicted)
 
 if __name__ == "__main__":
     main()
