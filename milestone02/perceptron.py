@@ -109,6 +109,18 @@ def train_perceptron(x_train, y_train):
 
         return w
 
+# function to predict perceptron
+def predict_perceptron(x_test, w):
+    predictions = []
+    for x in x_test:
+        x_features = list(x) # converts features to list
+        x_full = np.array([1.0] + x_features)
+        v = np.dot(w, x_full)
+        prediction = 1 if v > 0 else 0
+        predictions.append(prediction)
+
+    return np.array(predictions, dtype = int)
+
 def main():
     # loads data
     x_train, y_train, x_test, y_test = load_data()
@@ -120,6 +132,8 @@ def main():
     # train perceptron
     print("Training Perceptron")
     w = train_perceptron(x_train, y_train)
+    # predict testing data
+    y_predicted = predict_perceptron(x_test, w)
 
 if __name__ == "__main__":
     main()
