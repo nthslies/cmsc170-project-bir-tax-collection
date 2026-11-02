@@ -19,7 +19,7 @@ def normalize_data(x_train, x_test):
 
 # function to train perceptron
 def train_perceptron(x_train, y_train):
-    # converts labels from {0,1} to {1,0} to ensure correct weight updates
+    # converts labels from {0,1} to {1,0} for perceptron training
     y_train = np.where(y_train == 0, -1, 1)
     r = 0.1 # learning rate set to 0.1
     b = 0.5 # bias
@@ -187,6 +187,35 @@ def evaluate_model(y_actual, y_predicted):
         print(f"Precision: {precision_scores[i]:.4f}")
         print(f"Recall:    {recall_scores[i]:.4f}")
         print(f"F1-Score:  {f1_scores[i]:.4f}")
+
+    # saves evaluation metrics on same csv file
+    with open("perceptron_training.csv", "a", newline = "") as file:
+        writer = csv.writer(file)
+        writer.writerow([])
+        writer.writerow(["CONFUSION MATRIX"])
+        writer.writerow(["", "Predicted Down", "Predicted Up"])
+        writer.writerow(["Actual Down", confusion_matrix[0][0], confusion_matrix[0][1]])
+        writer.writerow(["Actual Up", confusion_matrix[1][0], confusion_matrix[1][1]])
+        writer.writerow([])
+        writer.writerow(["EVALUATION METRICS"])
+        writer.writerow(["Metric", "Value"])
+        writer.writerow(["Accuracy", f"{accuracy:.4f}"])
+        writer.writerow(["Macro Precision", f"{macro_precision:.4f}"])
+        writer.writerow(["Macro Recall", f"{macro_recall:.4f}"])
+        writer.writerow(["Macro F1-Score", f"{macro_f1:.4f}"])
+        writer.writerow([])
+        writer.writerow(["PER-CLASS METRICS"])
+        writer.writerow(["Class", "Precision", "Recall", "F1-Score"])
+
+        for i in range(2):
+            writer.writerow([
+                class_names[i],
+                f"{precision_scores[i]:.4f}",
+                f"{recall_scores[i]:.4f}",
+                f"{f1_scores[i]:.4f}"
+            ])
+
+    print("Results saved to perceptron_training.csv")
 
 def main():
     # loads data
