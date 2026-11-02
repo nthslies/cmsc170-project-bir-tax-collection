@@ -148,6 +148,28 @@ def try_all_k(points, distances, random_gen, max_k):
     results.append(run)
   return results
 
+# gets the mean of the three stats of each cluster
+def cluster_profiles(regions, labels, k):
+  profiles = []
+  for c in range(k):
+    members = [i for i in range(len(regions)) if labels[i] == c]
+    profile = {"members": members}
+    for position, name in enumerate(["mean_monthly", "growth", "volatility"]):
+      profile[name] = sum(regions[i][position] for i in members) / len(members) if len(members) > 0 else 0.0
+    profiles.append(profile)
+  return profiles
+
+# prints the profile and the regions of each cluster
+def display_clusters(regions, region_names, labels, k):
+  print("\n-----------CLUSTER PROFILES-----------")
+  print(f"{'Cluster':<9}{'# Regions':<11}{'Mean Monthly (M PHP)':<22}{'Avg Growth (%)':<16}{'Volatility':<12}")
+  profiles = cluster_profiles(regions, labels, k)
+  for c, profile in enumerate(profiles):
+    print(f"{c:<9}{len(profile['members']):<11}{profile['mean_monthly']:<22,.2f}{profile['growth'] * 100:<16.2f}{profile['volatility']:<12.3f}")
+  print("\n-----------REGIONS PER CLUSTER-----------")
+  for c, profile in enumerate(profiles):
+    print(f"Cluster {c}: " + ", ".join(region_names[i] for i in profile["members"]))
+
 # calls the other functions
 def kmeans_tax_collection():
   regions, region_names = load_clustering()
@@ -165,6 +187,11 @@ def kmeans_tax_collection():
   means, stds = column_stats(features)
   points = standardize(features, means, stds)
   distances = pairwise_distances(points)
+  print(f"Total # of regions: {len(regions)}")
+  print("Features: log10 of mean monthly collection, average annual growth, volatility (standardized)")
+  print()
+  print("################################################")
+  print()
 
   results = try_all_k(points, distances, random_gen, max_k)
   print("K SELECTION")
@@ -176,12 +203,19 @@ def kmeans_tax_collection():
     best_silhouette = max(result["silhouette"] for result in results)
     chosen_k = [result["k"] for result in results if result["silhouette"] == best_silhouette][0]
 
-  final = [result for result in results if result["k"] == chosen_k][0]
   print()
+  print("################################################")
+  print()
+  print(f"Finding k={chosen_k} clusters...")
+  print()
+  final = [result for result in results if result["k"] == chosen_k][0] # best of the 10 restarts from the sweep
   print(f"Number of Clusters: {chosen_k}")
   print(f"Inertia: {final['inertia']:.2f}")
   print(f"Inertia over 10 restarts: min {min(final['all_inertias']):.2f}, max {max(final['all_inertias']):.2f}")
   print(f"Converged in {final['iterations']} iterations")
-  print(f"Mean Silhouette Score: {final['silhouette']:.4f}")
+  print()
+  display_clusters(regions, region_names, final["labels"], chosen_k)
+  print()
+  print(f"Overall Silhouette score: {final['silhouette']}")
 
 kmeans_tax_collection()
