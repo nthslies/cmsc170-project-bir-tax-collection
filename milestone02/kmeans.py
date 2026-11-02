@@ -1,16 +1,17 @@
 # Milestone 2 K-Means Clustering on BIR Tax Collection Data
 
 import math
+import random
 from filereader import load_clustering
 
-# asks for the number of clusters
-def ask_k(total_regions):
+# asks for the number of clusters, 0 means pick the best k
+def ask_k(max_k):
   while True:
     try:
-      k = int(input("Enter the number of clusters, k: "))
-      if 2 <= k <= total_regions:
+      k = int(input(f"Enter the number of clusters, k (0 to pick the best k from 2 to {max_k}): "))
+      if k == 0 or 2 <= k <= max_k:
         return k
-      print(f"k must be from 2 to {total_regions}!")
+      print(f"k must be 0 or from 2 to {max_k}!")
     except ValueError:
       print("k must be a whole number!")
 
@@ -45,19 +46,16 @@ def squared_distance(point, centroid):
     total += (point[j] - centroid[j]) ** 2
   return total
 
-# puts every region in the cluster of its nearest centroid
-def assign_clusters(points, centroids):
-  labels = []
-  for point in points:
-    best = 0
-    best_distance = squared_distance(point, centroids[0])
-    for c in range(1, len(centroids)):
-      distance = squared_distance(point, centroids[c])
-      if distance < best_distance: # strictly smaller, so ties go to the first centroid
-        best = c
-        best_distance = distance
-    labels.append(best)
-  return labels
+# finds the nearest centroid
+def nearest_centroid(point, centroids):
+  best = 0
+  best_distance = squared_distance(point, centroids[0])
+  for c in range(1, len(centroids)):
+    distance = squared_distance(point, centroids[c])
+    if distance < best_distance: # strictly smaller, so ties go to the first centroid
+      best = c
+      best_distance = distance
+  return best
 
 # moves each centroid to the mean of its points
 def update_centroids(points, labels, centroids):
@@ -70,28 +68,39 @@ def update_centroids(points, labels, centroids):
     new_centroids.append([sum(column) / len(members) for column in zip(*members)])
   return new_centroids
 
-# number of regions in each cluster
-def cluster_sizes(labels, k):
-  sizes = [0] * k
-  for label in labels:
-    sizes[label] += 1
-  return sizes
+# inertia, total squared distance to the own centroid
+def compute_inertia(points, labels, centroids):
+  total = 0
+  for i in range(len(points)):
+    total += squared_distance(points[i], centroids[labels[i]])
+  return total
 
-# runs k-means until the clusters stop changing
-def kmeans(points, k):
-  print("Initializing centroids... ")
-  centroids = [list(point) for point in points[:k]] # first k regions
+# one run of k-means
+def kmeans_once(points, k, random_gen, max_iterations=300):
+  centroids = [list(point) for point in random_gen.sample(points, k)]
   labels = None
   iteration = 0
-  while True:
+  while iteration < max_iterations:
     iteration += 1
-    new_labels = assign_clusters(points, centroids)
-    print(f"updating centroid [iteration]: {iteration}")
-    if new_labels == labels: # nothing moved, so the centroids won't change anymore
+    new_labels = [nearest_centroid(point, centroids) for point in points]
+    if new_labels == labels: # nothing moved, so stop
       break
     labels = new_labels
     centroids = update_centroids(points, labels, centroids)
-  return labels, centroids
+  return {"labels": labels, "centroids": centroids, "iterations": iteration,
+          "inertia": compute_inertia(points, labels, centroids)}
+
+# runs k-means many times, keeps the lowest inertia
+def kmeans(points, k, random_gen, restarts=10):
+  best = None
+  all_inertias = []
+  for _ in range(restarts):
+    run = kmeans_once(points, k, random_gen)
+    all_inertias.append(run["inertia"])
+    if best is None or run["inertia"] < best["inertia"]:
+      best = run
+  best["all_inertias"] = all_inertias
+  return best
 
 # distance of every pair of points
 def pairwise_distances(points):
@@ -128,15 +137,16 @@ def silhouette_scores(distances, labels, k):
       scores.append((b - a) / max(a, b))
   return scores
 
-# prints the number of regions and the regions of each cluster
-def display_clusters(labels, region_names, k):
-  sizes = cluster_sizes(labels, k)
-  print("Regions per Cluster")
-  print(f"{'Cluster':<11}{'# Regions':<11}{'Regions':<80}")
-  print("-" * 102)
-  for c in range(k):
-    members = ", ".join(region_names[i] for i in range(len(labels)) if labels[i] == c)
-    print(f"{c:<11}{sizes[c]:<11}{members}")
+# tries every k from 2 to max_k, one dictionary of results for each k
+def try_all_k(points, distances, random_gen, max_k):
+  results = []
+  for k in range(2, max_k + 1):
+    run = kmeans(points, k, random_gen)
+    scores = silhouette_scores(distances, run["labels"], k)
+    run["k"] = k
+    run["silhouette"] = sum(scores) / len(scores)
+    results.append(run)
+  return results
 
 # calls the other functions
 def kmeans_tax_collection():
@@ -144,27 +154,34 @@ def kmeans_tax_collection():
   if regions is None:
     return
   regions = regions.tolist()
+  max_k = min(10, len(regions) - 1)
 
   print()
-  k = ask_k(len(regions))
+  chosen_k = ask_k(max_k)
   print()
 
+  random_gen = random.Random(170)
   features = make_features(regions)
   means, stds = column_stats(features)
   points = standardize(features, means, stds)
-  print(f"Total # of regions: {len(regions)}")
-  print("Features: log10 of mean monthly collection, average annual growth, volatility (standardized)")
-  print()
-  print("################################################")
-  print()
-  print(f"Finding k={k} clusters...")
-  print()
-  labels, centroids = kmeans(points, k)
-  print()
-  display_clusters(labels, region_names, k)
-  print()
   distances = pairwise_distances(points)
-  scores = silhouette_scores(distances, labels, k)
-  print(f"Overall Silhouette score: {sum(scores) / len(scores)}")
+
+  results = try_all_k(points, distances, random_gen, max_k)
+  print("K SELECTION")
+  print(f"{'k':<5}{'Inertia':<14}{'Silhouette':<12}")
+  print("-" * 31)
+  for result in results:
+    print(f"{result['k']:<5}{result['inertia']:<14.2f}{result['silhouette']:<12.4f}")
+  if chosen_k == 0:
+    best_silhouette = max(result["silhouette"] for result in results)
+    chosen_k = [result["k"] for result in results if result["silhouette"] == best_silhouette][0]
+
+  final = [result for result in results if result["k"] == chosen_k][0]
+  print()
+  print(f"Number of Clusters: {chosen_k}")
+  print(f"Inertia: {final['inertia']:.2f}")
+  print(f"Inertia over 10 restarts: min {min(final['all_inertias']):.2f}, max {max(final['all_inertias']):.2f}")
+  print(f"Converged in {final['iterations']} iterations")
+  print(f"Mean Silhouette Score: {final['silhouette']:.4f}")
 
 kmeans_tax_collection()
