@@ -13,7 +13,7 @@ def training_classifier(x_train, y_train, k):
     # ------------------------------------------------------------------
     # 2 classes of the target variable (Up or Down)
     classes = np.unique(y_train) # 1 = Up, 0 = Down
-    region_col = len(x_train[0]) - 3 # index of the region column (3 = columns for [month_sin, month_cos, previous_revenue])
+    region_col = len(x_train[0]) - 7 # index of the region column (7 = columns for [month_sin, month_cos, previous_revenue, previous_3month_mean, previous_3month_volatility, previous_month_mom_growth, historical_median_mom_growth])
 
     mean = {}
     variance = {}
