@@ -164,10 +164,6 @@ def load_data(zip_path = None):
     feature_names = [region_names.get(region, region) for region in sorted_region] + [
     "month_sin", "month_cos", "previous_month", "previous_3month_mean",
     "previous_3month_volatility", "previous_month_mom_growth", "historical_median_mom_growth"]
-
-    # feature_names = [f"region_{region_to_id[region]}" for region in sorted_region] + [
-    #     "month_sin", "month_cos", "previous_month", "previous_3month_mean", 
-    #     "previous_3month_volatility", "previous_month_mom_growth", "historical_median_mom_growth"]
     csv_rows = []
 
     for region in sorted_region:
