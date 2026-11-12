@@ -1,0 +1,3 @@
+cluster,points,median_monthly,median_mom_growth,median_qoq_growth,volatility,meaning
+0,63,883.4150000000001,0.038790723165680926,0.04640749714914001,0.1843653956293889,"size average, MoM growth average, QoQ growth average, volatility average"
+1,27,3862.5950000000003,-0.08489562160540176,0.00908883041677488,0.2858685751921208,"size high, MoM growth low, QoQ growth average, volatility high"
