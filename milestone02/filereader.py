@@ -9,18 +9,19 @@ import numpy as np
 import math
 
 # function to read uploaded zip file
-def read_collection():
+def read_collection(zip_path = None):
     # initialize window in order to open file
-    root = tk.Tk()
-    root.withdraw()
-    zip_path = askopenfilename(
-        title = "Select BIR Tax Collection ZIP File",
-        filetypes = [
-            ("ZIP files", "*.zip"),
-            ("All files", "*.*")
-        ]
-    )
-    root.destroy()
+    if zip_path is None:
+        root = tk.Tk()
+        root.withdraw()
+        zip_path = askopenfilename(
+            title = "Select BIR Tax Collection ZIP File",
+            filetypes = [
+                ("ZIP files", "*.zip"),
+                ("All files", "*.*")
+            ]
+        )
+        root.destroy()
 
     # if no file selected
     if not zip_path:
@@ -114,9 +115,23 @@ def read_collection():
 
     return collections
 
+# gets date of previous month with year transitions
+def previous_month(year, month, steps = 1):
+    index = year * 12 + month - 1 - steps
+    return index // 12, index % 12 + 1
+
+# calculates month-over-month growth for a region
+def monthly_growth(collections, region, month, year):
+    previous_year, previous_month_num = previous_month(year, month)
+    current = collections.get((region, month, year))
+    previous = collections.get((region, previous_month_num, previous_year))
+    if current is None or previous is None or previous <= 0:
+        return None
+    return (current - previous) / previous
+
 # functions for loading data needed
-def load_data():
-    collections = read_collection()
+def load_data(zip_path = None):
+    collections = read_collection(zip_path)
     if collections is None:
         return None, None, None, None
     # sorting the regions
@@ -125,52 +140,110 @@ def load_data():
     region_to_id = {region: index for index, region in enumerate(sorted_region)}
     # initializes train and test data
     x_train, y_train, x_test, y_test = [], [], [], []
-    # loops in collections
-    for (region, month, year) in sorted(collections):
-        current_revenue = collections[(region, month, year)]
-        previous_year = year - 1
-        # makes sure data exists for specific month and region
-        if (region, month, previous_year) in collections:
-            previous_revenue = collections[(region, month, previous_year)]
-            # compares current with previous
-            if current_revenue > previous_revenue:
-                label = 1 
-            else:
-                label = 0
-            region_features = [0.0] * len(sorted_region) # creates list for all regions 
-            region_idx = region_to_id[region] # index of current
-            region_features[region_idx] = 1.0 # set current to 1
-            # to represent months as yearly cycle
-            month_sin = math.sin( 2 * math.pi * month / 12)
-            month_cos = math.cos( 2 * math.pi * month / 12)
-            features = region_features + [month_sin, month_cos, previous_revenue]
-            # for identifying if training or test data
-            if 2021 <= year <= 2023:
-                x_train.append(features)
-                y_train.append(label)
-            elif year == 2024:
-                x_test.append(features)
-                y_test.append(label)
+    # maps names to acronyms
+    region_names = {
+    "Bangsamoro Autonomous Region in Muslim Mindanao": "BARMM",
+    "Cordillera Administrative Region": "CAR",
+    "National Capital Region": "NCR",
+    "MIMAROPA Region": "MIMAROPA",
+    "Region I": "I",
+    "Region II": "II",
+    "Region III": "III",
+    "Region IV-A": "IV-A",
+    "Region V": "V",
+    "Region VI": "VI",
+    "Region VII": "VII",
+    "Region VIII": "VIII",
+    "Region IX": "IX",
+    "Region X": "X",
+    "Region XI": "XI",
+    "Region XII": "XII",
+    "Region XIII": "XIII"
+    }
+
+    feature_names = [region_names.get(region, region) for region in sorted_region] + [
+    "month_sin", "month_cos", "previous_month", "previous_3month_mean",
+    "previous_3month_volatility", "previous_month_mom_growth", "historical_median_mom_growth"]
+
+    # feature_names = [f"region_{region_to_id[region]}" for region in sorted_region] + [
+    #     "month_sin", "month_cos", "previous_month", "previous_3month_mean", 
+    #     "previous_3month_volatility", "previous_month_mom_growth", "historical_median_mom_growth"]
+    csv_rows = []
+
+    for region in sorted_region:
+        earlier_growth = []
+        for year in range(2020, 2025):
+            for month in range(1, 13):
+                current_revenue = collections.get((region, month, year))
+                if current_revenue is None:
+                    continue
+
+                target_growth = monthly_growth(collections, region, month, year)
+                previous_year, previous_month_num = previous_month(year, month)
+                previous_growth = monthly_growth(collections, region, previous_month_num, previous_year)
+                # gets previous 3 months
+                prior_keys = []
+                for steps in (1, 2, 3):
+                    prior_year, prior_month = previous_month(year, month, steps)
+                    prior_keys.append((region, prior_month, prior_year))
+                # starts with April 2020
+                if (year > 2020 or month >= 4) and target_growth is not None and previous_growth is not None and earlier_growth and all(key in collections for key in prior_keys):
+                    previous_values = [collections[key] for key in prior_keys]
+                    previous_mean = float(np.mean(previous_values))
+                    previous_volatility = (float(np.std(previous_values)) / max(abs(previous_mean), 1e-9))
+                    historical_median = float(np.median(earlier_growth))
+                    region_features = [0.0] * len(sorted_region) # creates list for all regions 
+                    region_features[region_to_id[region]] = 1.0 # set current to 1
+                    # to represent months as yearly cycle
+                    month_sin = math.sin(2 * math.pi * month / 12)
+                    month_cos = math.cos(2 * math.pi * month / 12)
+                    features = region_features + [ month_sin, month_cos, previous_values[0],
+                        previous_mean, previous_volatility, previous_growth, historical_median]
+                    # marks 1 if greater than historical median
+                    label = int(target_growth > historical_median)
+                    # for identifying if training or test data
+                    if year <= 2023:
+                        x_train.append(features)
+                        y_train.append(label)
+                        split = "train"
+                    elif year == 2024:
+                        x_test.append(features)
+                        y_test.append(label)
+                        split = "test"
+                    csv_rows.append([split, region, year, month, f"{previous_year}-{previous_month_num:02d}",
+                                     *features, label])
+
+                if target_growth is not None:
+                    earlier_growth.append(target_growth)
 
     # checks if train or test data is empty
     if not x_train or not x_test:
         print("Training or testing data is empty.")
         return None, None, None, None
+
+    csv_rows.sort(key = lambda row: (row[2], row[3], row[1]))
+    with open("cleaned_data.csv", "w", newline = "", encoding = "utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["split", "region", "year", "month", "basis", *feature_names, "label"])
+        writer.writerows(csv_rows)
+    
     # converts to arrays
     x_train = np.array(x_train, dtype = float)
     y_train = np.array(y_train, dtype = int)
     x_test = np.array(x_test, dtype = float)
     y_test = np.array(y_test, dtype = int)
+
     # prints info about dataset
     print(f"\nNumber of Regions: {len(sorted_region)}")
-    print(f"Training Records (2021-2023): {len(x_train)}")
+    print(f"Training Records (April 2020 - 2023): {len(x_train)}")
     print(f"Testing Records (2024): {len(x_test)}")
     print(f"Number of Features: {x_train.shape[1]}")
+    print("File saved as 'cleaned_data.csv'")
     
     return(x_train, y_train, x_test, y_test)
 
-def load_clustering():
-    collections = read_collection()
+def load_clustering(zip_path = None):
+    collections = read_collection(zip_path)
     if collections is None:
         return None, None
     # sorting the regions
@@ -236,14 +309,29 @@ def load_clustering():
     return x_regions, region_names
 
 if __name__ == "__main__":
+    # select ZIP
+    root = tk.Tk()
+    root.withdraw()
+    selected_zip = askopenfilename(
+        title = "Select BIR Tax Collection ZIP File",
+        filetypes = [
+            ("ZIP files", "*.zip"), 
+            ("All files", "*.*")
+        ]
+    )
+    root.destroy()
+    if not selected_zip:
+        print("No ZIP file selected.")
+        raise SystemExit
+
     # supervised
-    x_train, y_train, x_test, y_test = load_data()
+    x_train, y_train, x_test, y_test = load_data(selected_zip)
     if x_train is not None:
         # indicator that data loaded
         print("\nData Loading Completed!")
 
     # unsupervised
-    x_regions, region_names = load_clustering()
+    x_regions, region_names = load_clustering(selected_zip)
     if x_regions is not None:
         # indicator that data loaded
         print("\nData Loading Completed!")
