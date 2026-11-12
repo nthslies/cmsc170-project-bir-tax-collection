@@ -247,3 +247,17 @@ if __name__ == "__main__":
     if x_regions is not None:
         # indicator that data loaded
         print("\nData Loading Completed!")
+
+
+# expand data set OR get the features per region
+# prevent data leak from other region
+# refine code pls 
+# print the preprocessed code 
+# fix algo for k-means
+# find the right k
+# which neighbor will the algos see 
+# if we do k = 10 and above
+# k-means, what is the meaning of each cluster, what is the right balance of sillhouette and inertia?
+# meaning of the values themselves 
+# why are the macro-metrics only 0.4ish, when it should be at least 0.5
+# what does macro-f1 mean for all algos 
