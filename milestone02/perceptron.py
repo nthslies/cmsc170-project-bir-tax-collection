@@ -21,7 +21,7 @@ def normalize_data(x_train, x_test):
 def train_perceptron(x_train, y_train):
     # converts labels from {0,1} to {1,0} for perceptron training
     y_train = np.where(y_train == 0, -1, 1)
-    r = 0.1 # learning rate set to 0.1
+    r = 0.75 # learning rate set to 0.1
     b = 0.5 # bias
     # prepares training data
     data = []
