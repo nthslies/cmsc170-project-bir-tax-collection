@@ -130,9 +130,11 @@ def monthly_growth(collections, region, month, year):
     return (current - previous) / previous
 
 # functions for loading data needed
-def load_data(zip_path = None):
+def load_data(zip_path = None, return_years = False):
     collections = read_collection(zip_path)
     if collections is None:
+        if return_years:
+            return None, None, None, None, None
         return None, None, None, None
     # sorting the regions
     sorted_region = sorted(set(region for region, month, year in collections))
@@ -140,6 +142,7 @@ def load_data(zip_path = None):
     region_to_id = {region: index for index, region in enumerate(sorted_region)}
     # initializes train and test data
     x_train, y_train, x_test, y_test = [], [], [], []
+    year_train = [] # year of each training row, for the validation folds
 
     feature_names = [f"region_{region_to_id[region]}" for region in sorted_region] + [
     "month_sin", "month_cos", "previous_month", "previous_3month_mean",
@@ -181,6 +184,7 @@ def load_data(zip_path = None):
                     if year <= 2023:
                         x_train.append(features)
                         y_train.append(label)
+                        year_train.append(year)
                         split = "train"
                     elif year == 2024:
                         x_test.append(features)
@@ -195,6 +199,8 @@ def load_data(zip_path = None):
     # checks if train or test data is empty
     if not x_train or not x_test:
         print("Training or testing data is empty.")
+        if return_years:
+            return None, None, None, None, None
         return None, None, None, None
 
     csv_rows.sort(key = lambda row: (row[2], row[3], row[1]))
@@ -216,6 +222,9 @@ def load_data(zip_path = None):
     print(f"Number of Features: {x_train.shape[1]}")
     print("File saved as 'cleaned_data.csv'")
     
+    # the years are only returned when asked, so the other files that use load_data still work
+    if return_years:
+        return x_train, y_train, x_test, y_test, year_train
     return(x_train, y_train, x_test, y_test)
 
 def load_clustering(zip_path = None):
