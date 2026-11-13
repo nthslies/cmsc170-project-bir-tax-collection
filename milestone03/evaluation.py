@@ -223,17 +223,27 @@ def evaluate_model(y_actual, y_predicted, baselines = None, model_name = "Model"
 # (OwO) --------------------------------------------------------------------------
 # Main
 # (OwO) --------------------------------------------------------------------------
+# runs all classification models on each feature set and writes their results in a csv
 
-KNN_K = 1
+# -- ETO YUN CHANGES --
+# "base" is the original features (bali yung based sa preprocessed data with sin and cos columns from csv)
+#  "month one-hot" replaces month_sin and month_cos with 12 month columns (bali ilabel as 1 or 0 whetehr active column na yon)
+# remove one of them to run only the other, so if both, irarun both in sequence
+FEATURE_SETS = ["base", "month one-hot"]
+# if TUNE_KNN is True, k, p and the month weight are picked on the validation folds
+# and KNN_K, KNN_P, KNN_MONTH_WEIGHT are not used
+TUNE_KNN = True
+KNN_K = 7
 KNN_P = 2.0
+KNN_MONTH_WEIGHT = 2
 NAIVE_BAYES_SMOOTHING = 1.0
 RESULTS_FILE = "classification_results.csv"
 
 # makes one csv row from the results of a model or a baseline
 # tn, fp, fn, tp are counted with class 1 as the positive class
-def result_row(name, kind, settings, results):
+def result_row(name, kind, features, settings, results):
     matrix = results["confusion_matrix"]
-    row = [name, kind, settings]
+    row = [name, kind, features, settings]
     row.append(f"{results['accuracy']:.4f}")
     row.append(f"{results['macro_precision']:.4f}")
     row.append(f"{results['macro_recall']:.4f}")
@@ -253,52 +263,86 @@ def main():
     import io
     import contextlib
     from filereader import load_data
-    from normalize import normalize_data
-    from knn import knn_predict
+    from normalize import normalize_data, add_month_onehot, REGION_COLS, MONTH_COLS
+    from knn import knn_predict, tune_knn, show_tuning, weight_month
     from naivebayes import training_classifier, prediction
     from perceptron import train_perceptron, predict_perceptron
  
     # loads data once for all the models
-    x_train, y_train, x_test, y_test = load_data()
+    x_train, y_train, x_test, y_test, years_train = load_data(return_years = True)
     if x_train is None:
         return
  
-    # scales the features, the raw features are kept for the month baseline
-    x_train_scaled, x_test_scaled = normalize_data(x_train, x_test)
+    # the baselines always use the raw original features
     baselines = make_baselines(x_train, y_train, x_test)
  
-    # (1u1) runs every model on the same data
-    predictions = {}
-    settings = {}
- 
-    print("\nRunning KNN...")
-    predictions["KNN"] = knn_predict(x_train_scaled, y_train, x_test_scaled, KNN_K, KNN_P)
-    settings["KNN"] = f"k={KNN_K}; p={KNN_P}"
- 
-    print("Running Naive Bayes...")
-    nb_model = training_classifier(x_train_scaled, y_train, NAIVE_BAYES_SMOOTHING)
-    predictions["Naive Bayes"] = prediction(x_test_scaled, *nb_model)
-    settings["Naive Bayes"] = f"smoothing k={NAIVE_BAYES_SMOOTHING}"
- 
-    print("Training Perceptron...")
-    # the training prints every epoch, so the printing is hidden here
-    with contextlib.redirect_stdout(io.StringIO()):
-        weights = train_perceptron(x_train_scaled, y_train)
-    predictions["Perceptron"] = predict_perceptron(x_test_scaled, weights)
-    settings["Perceptron"] = "see perceptron.py"
- 
-    # (2o2) shows and collects the results of each model
     rows = []
-    for name in predictions:
-        print(f"\n================ {name.upper()} ================")
-        results = evaluate_model(y_test, predictions[name], baselines = baselines, model_name = name)
-        rows.append(result_row(name, "model", settings[name], results))
+    for feature_set in FEATURE_SETS:
+        print(f"\n######## FEATURES: {feature_set.upper()} ########")
+        # (1u1) chooses the features of this run
+        if feature_set == "month one-hot":
+            x_train_used = add_month_onehot(x_train)
+            x_test_used = add_month_onehot(x_test)
+            month_cols = (REGION_COLS, REGION_COLS + MONTH_COLS)
+            group_sizes = [REGION_COLS, MONTH_COLS]
+        else:
+            x_train_used = x_train
+            x_test_used = x_test
+            month_cols = None
+            group_sizes = None
+        tag = feature_set.replace(" ", "_").replace("-", "")
+
+        # scales the features
+        x_train_scaled, x_test_scaled = normalize_data(x_train_used, x_test_used)
+ 
+        predictions = {}
+        settings = {}
+ 
+        # KNN, k, p and the month weight are picked on the validation folds
+        knn_k = KNN_K
+        knn_p = KNN_P
+        knn_weight = KNN_MONTH_WEIGHT
+        knn_note = ""
+        if TUNE_KNN:
+            print("\nTuning KNN on the validation folds...")
+            knn_k, knn_p, knn_weight, tuning_results, validate_years = tune_knn(x_train_used, y_train, years_train, month_cols = month_cols)
+            show_tuning(tuning_results, validate_years, knn_k, knn_p, knn_weight, f"knn_tuning_{tag}.csv")
+            knn_note = " (chosen by validation)"
+
+        x_train_knn = x_train_scaled
+        x_test_knn = x_test_scaled
+        knn_setting = f"k={knn_k}; p={knn_p}"
+        if month_cols is not None:
+            x_train_knn = weight_month(x_train_scaled, month_cols, knn_weight)
+            x_test_knn = weight_month(x_test_scaled, month_cols, knn_weight)
+            knn_setting += f"; month weight={knn_weight}"
+        print("\nRunning KNN...")
+        predictions["KNN"] = knn_predict(x_train_knn, y_train, x_test_knn, knn_k, knn_p)
+        settings["KNN"] = knn_setting + knn_note
+ 
+        print("Running Naive Bayes...")
+        nb_model = training_classifier(x_train_scaled, y_train, NAIVE_BAYES_SMOOTHING, group_sizes)
+        predictions["Naive Bayes"] = prediction(x_test_scaled, *nb_model)
+        settings["Naive Bayes"] = f"smoothing k={NAIVE_BAYES_SMOOTHING}"
+ 
+        print("Training Perceptron...")
+        # the training prints every epoch, so the printing is hidden here
+        with contextlib.redirect_stdout(io.StringIO()):
+            weights = train_perceptron(x_train_scaled, y_train)
+        predictions["Perceptron"] = predict_perceptron(x_test_scaled, weights)
+        settings["Perceptron"] = "see perceptron.py"
+ 
+        # (2o2) shows and collects the results of each model
+        for name in predictions:
+            print(f"\n================ {name.upper()} [{feature_set}] ================")
+            results = evaluate_model(y_test, predictions[name], baselines = baselines, model_name = name)
+            rows.append(result_row(name, "model", feature_set, settings[name], results))
  
     # (3_3) collects the results of the baselines
     for name, baseline_predictions in baselines.items():
-        rows.append(result_row(name, "baseline", "", compute_metrics(y_test, baseline_predictions)))
+        rows.append(result_row(name, "baseline", "raw features", "", compute_metrics(y_test, baseline_predictions)))
  
-    header = ["method", "type", "settings", "accuracy", "macro_precision", "macro_recall", "macro_f1"]
+    header = ["method", "type", "features", "settings", "accuracy", "macro_precision", "macro_recall", "macro_f1"]
     for class_name in CLASS_NAMES:
         header.extend([f"precision_{class_name}", f"recall_{class_name}", f"f1_{class_name}"])
     header.extend(["tn", "fp", "fn", "tp"])
@@ -310,9 +354,9 @@ def main():
  
     # shows a summary of everything that was saved
     print("\n================ SUMMARY ================")
-    print(f"{'Method':<24}{'Accuracy':>10}{'Macro F1':>10}")
+    print(f"{'Method':<22}{'Features':<16}{'Accuracy':>10}{'Macro F1':>10}")
     for row in rows:
-        print(f"{row[0]:<24}{row[3]:>10}{row[6]:>10}")
+        print(f"{row[0]:<22}{row[2]:<16}{row[4]:>10}{row[7]:>10}")
     print(f"\nResults saved to {RESULTS_FILE}")
  
 if __name__ == "__main__":
