@@ -2,9 +2,9 @@
 import numpy as np
 from evaluation import get_months
 
-# -- FOR BEHAVIORAL (OwO)
+# -- FOR ONE-HOT E2 (OwO)
 # number of region columns at the start of the features and number of month columns that replace month_sin and month_cos
-REGION_COLS = 3
+REGION_COLS = 18
 MONTH_COLS = 12
 
 # function for normalizing features between 0 and 1
@@ -22,8 +22,10 @@ def normalize_data(x_train, x_test):
 
     return x_train, x_test
 
-# -- Ibalik ntin to sin and cos
-def add_month_onehot(x, sin_col = 3, cos_col = 4):
+# -- HERE ULI ONE-HOT (PoP) -- 
+# replaces month_sin and month_cos with 12 columns, one for each month (1 for the month of the row)
+# the new columns are [region columns][12 month columns][the other features]
+def add_month_onehot(x, sin_col = 18, cos_col = 19):
     months = get_months(x, sin_col, cos_col)
 
     rows = []

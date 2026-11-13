@@ -144,25 +144,10 @@ def load_data(zip_path = None, return_years = False):
     x_train, y_train, x_test, y_test = [], [], [], []
     year_train = [] # year of each training row, for the validation folds
 
-    # -- CHANGED ONE-HOT TO BEHAVIORAL 
-    # bali iimplement natin yun from k-means
-    feature_names = [
-        "region_mean", "region_annual_growth", "region_volatility", 
-        "month_sin", "month_cos", "previous_month", "previous_3month_mean",
-        "previous_3month_volatility", "previous_month_mom_growth", "historical_median_mom_growth"
-    ]
+    feature_names = [f"region_{region_to_id[region]}" for region in sorted_region] + [
+    "month_sin", "month_cos", "previous_month", "previous_3month_mean",
+    "previous_3month_volatility", "previous_month_mom_growth", "historical_median_mom_growth"]
     csv_rows = []
-    
-    # Pre-calculate behavioral features for all regions
-    region_profiles = {}
-    for r in sorted_region:
-        monthly_values = [collections[k] for k in collections if k[0] == r]
-        yearly_totals = {y: sum(collections[(r, m, y)] for m in range(1, 13) if (r, m, y) in collections) for y in range(2020, 2025)}
-        mean_rev = float(np.mean(monthly_values)) if monthly_values else 0.0
-        volatility = float(np.std(monthly_values)) / abs(mean_rev) if mean_rev != 0 else 0.0
-        growth_rates = [((yearly_totals[y] - yearly_totals[y-1]) / yearly_totals[y-1]) for y in range(2021, 2025) if yearly_totals.get(y-1, 0) != 0]
-        avg_growth = float(np.mean(growth_rates)) if growth_rates else 0.0
-        region_profiles[r] = [mean_rev, avg_growth, volatility]
 
     for region in sorted_region:
         earlier_growth = []
@@ -186,10 +171,8 @@ def load_data(zip_path = None, return_years = False):
                     previous_mean = float(np.mean(previous_values))
                     previous_volatility = (float(np.std(previous_values)) / max(abs(previous_mean), 1e-9))
                     historical_median = float(np.median(earlier_growth))
-
-                    # 3 behavioral metrics set
-                    region_features = region_profiles[region]
-                    
+                    region_features = [0.0] * len(sorted_region) # creates list for all regions 
+                    region_features[region_to_id[region]] = 1.0 # set current to 1
                     # to represent months as yearly cycle
                     month_sin = math.sin(2 * math.pi * month / 12)
                     month_cos = math.cos(2 * math.pi * month / 12)
