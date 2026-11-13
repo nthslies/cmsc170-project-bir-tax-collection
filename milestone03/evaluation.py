@@ -1,9 +1,11 @@
 # Shared evaluation code for the modelsz
 
 # imports
+import os
 import math
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 # names of the two classes, 0 and 1
 CLASS_NAMES = ["At/Below", "Above"]
@@ -221,6 +223,62 @@ def evaluate_model(y_actual, y_predicted, baselines = None, model_name = "Model"
     return results
 
 # (OwO) --------------------------------------------------------------------------
+# Model Plotting #https://www.geeksforgeeks.org/python/matplotlib-axes-axes-bar-in-python/
+# (OwO) -------------------------------------------------------------------------- 
+def plot_model(rows, folder):
+    models = []
+    accuracies = []
+    macro_f1s = []
+
+    for row in rows:
+        if row[1] == "model":
+            print("DEBUG ROW:", row)
+            models.append(row[0])
+            accuracies.append(float(row[3]))
+            macro_f1s.append(float(row[6]))
+    if not models:
+        print("No models found to plot.")
+        return
+    data = list(zip(accuracies, macro_f1s))
+    metrics = ["Accuracy", "Macro F1"]
+    colors = ["blue", "orange"]
+    
+    dim = len(data[0])
+    w = 0.6
+    dimw = w / dim
+
+    fig, ax = plt.subplots()
+    x = np.arange(len(data))
+    for i in range(len(data[0])):
+        y = [d[i] for d in data]
+        b = ax.bar(x + i * dimw, y, 
+                dimw, 
+                bottom = 0.001)
+
+    ax.set_xticks(x + w / 2 - dimw / 2)
+    ax.set_xticklabels(models)
+    ax.set_title("Model Performance Comparison")
+    ax.set_ylabel("Score")
+    ax.legend(metrics)
+
+    save_figure(fig, f"{folder}/model_performance.png")
+    plt.close(fig)
+
+# added from kmeans
+# saves a figure, if the file cannot be written (for example it is open in a viewer) it is saved under a new name
+def save_figure(figure, path):
+  try:
+    figure.savefig(path, dpi=150)
+  except OSError as error:
+    fallback = path[:-4] + "_new.png"
+    print(f"Could not save {path} ({error}). Close the file if it is open in another program.")
+    try:
+      figure.savefig(fallback, dpi=150)
+      print(f"Saved it as {fallback} instead.")
+    except OSError as second_error:
+      print(f"Could not save {fallback} either ({second_error}).")
+
+# (OwO) --------------------------------------------------------------------------
 # Main
 # (OwO) --------------------------------------------------------------------------
 
@@ -307,7 +365,9 @@ def main():
         writer = csv.writer(file)
         writer.writerow(header)
         writer.writerows(rows)
- 
+
+    plot_model(rows, "results/graphs")
+
     # shows a summary of everything that was saved
     print("\n================ SUMMARY ================")
     print(f"{'Method':<24}{'Accuracy':>10}{'Macro F1':>10}")
