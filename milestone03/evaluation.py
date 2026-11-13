@@ -1,7 +1,6 @@
 # Shared evaluation code for the modelsz
 
 # imports
-import os
 import math
 import random
 import numpy as np
