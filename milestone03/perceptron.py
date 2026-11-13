@@ -10,7 +10,7 @@ from evaluation import evaluate_model, make_baselines, CLASS_NAMES
 def train_perceptron(x_train, y_train):
     # converts labels from {0,1} to {1,0} for perceptron training
     y_train = np.where(y_train == 0, -1, 1)
-    r = 0.85 # learning rate set to 0.85
+    r = 0.8515 # learning rate set to 0.8515
     b = 0.5 # bias
     # prepares training data
     data = []
