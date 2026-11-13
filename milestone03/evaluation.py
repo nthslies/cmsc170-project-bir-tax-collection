@@ -83,7 +83,6 @@ def compute_metrics(y_actual, y_predicted):
 # (OwO) --------------------------------------------------------------------------
 # bali the baseline we mentioned in the comparison sa milestone 01
 
-
 # predicts most common training class for every test row
 def majority_baseline(y_train, n_test):
     label = 1 if np.mean(y_train) >= 0.5 else 0
@@ -144,7 +143,7 @@ def get_months(x, sin_col, cos_col):
 
 # predicts the most common training class of the same month using raw features
 # predicts that whichever label happened the most during a given month in training will happen again in the same month in testing
-def month_baseline(x_train, y_train, x_test, sin_col = 18, cos_col = 19):
+def month_baseline(x_train, y_train, x_test, sin_col = 3, cos_col = 4): # Updated default indices for behavioral features
 
     # convert the sine and cosine features into discrete month values
     train_months = get_months(x_train, sin_col, cos_col)
@@ -166,7 +165,7 @@ def month_baseline(x_train, y_train, x_test, sin_col = 18, cos_col = 19):
     return np.array([month_label[month] for month in test_months], dtype = int)
 
 # Gather all baselines in one direction
-def make_baselines(x_train, y_train, x_test, sin_col = 18, cos_col = 19):
+def make_baselines(x_train, y_train, x_test, sin_col = 3, cos_col = 4): # Updated default indices for behavioral features
     return {
         "Always majority": majority_baseline(y_train, len(x_test)),
         "Random Class Ratio": random_baseline(y_train, len(x_test)),
@@ -223,19 +222,12 @@ def evaluate_model(y_actual, y_predicted, baselines = None, model_name = "Model"
 # (OwO) --------------------------------------------------------------------------
 # Main
 # (OwO) --------------------------------------------------------------------------
-# runs all classification models on each feature set and writes their results in a csv
 
-# -- ETO YUN CHANGES --
-# "base" is the original features (bali yung based sa preprocessed data with sin and cos columns from csv)
-#  "month one-hot" replaces month_sin and month_cos with 12 month columns (bali ilabel as 1 or 0 whetehr active column na yon)
-# remove one of them to run only the other, so if both, irarun both in sequence
-FEATURE_SETS = ["base", "month one-hot"]
 # if TUNE_KNN is True, k, p and the month weight are picked on the validation folds
-# and KNN_K, KNN_P, KNN_MONTH_WEIGHT are not used
+# and KNN_K, KNN_P are not used
 TUNE_KNN = True
 KNN_K = 7
 KNN_P = 2.0
-KNN_MONTH_WEIGHT = 2
 NAIVE_BAYES_SMOOTHING = 1.0
 RESULTS_FILE = "classification_results.csv"
 
@@ -273,72 +265,60 @@ def main():
     if x_train is None:
         return
  
-    # the baselines always use the raw original features
+    # the baselines always use the raw original features (now with behavioral metrics at the start)
     baselines = make_baselines(x_train, y_train, x_test)
  
     rows = []
-    for feature_set in FEATURE_SETS:
-        print(f"\n######## FEATURES: {feature_set.upper()} ########")
-        # (1u1) chooses the features of this run
-        if feature_set == "month one-hot":
-            x_train_used = add_month_onehot(x_train)
-            x_test_used = add_month_onehot(x_test)
-            month_cols = (REGION_COLS, REGION_COLS + MONTH_COLS)
-            group_sizes = [REGION_COLS, MONTH_COLS]
-        else:
-            x_train_used = x_train
-            x_test_used = x_test
-            month_cols = None
-            group_sizes = None
-        tag = feature_set.replace(" ", "_").replace("-", "")
+    
+    print(f"\n######## PREPARING FEATURE SETS ########")
+    # 1. Prepare Base Features (for KNN & Perceptron)
+    x_train_scaled, x_test_scaled = normalize_data(x_train, x_test)
+    
+    # 2. Prepare One-Hot Month Features (for Naive Bayes)
+    x_train_onehot = add_month_onehot(x_train)
+    x_test_onehot = add_month_onehot(x_test)
+    x_train_onehot_scaled, x_test_onehot_scaled = normalize_data(x_train_onehot, x_test_onehot)
+    
+    # The one-hot months are inserted right after the 3 region features
+    group_sizes = [MONTH_COLS] # Naive Bayes only applies categorical math to the month group
 
-        # scales the features
-        x_train_scaled, x_test_scaled = normalize_data(x_train_used, x_test_used)
- 
-        predictions = {}
-        settings = {}
- 
-        # KNN, k, p and the month weight are picked on the validation folds
-        knn_k = KNN_K
-        knn_p = KNN_P
-        knn_weight = KNN_MONTH_WEIGHT
-        knn_note = ""
-        if TUNE_KNN:
-            print("\nTuning KNN on the validation folds...")
-            knn_k, knn_p, knn_weight, tuning_results, validate_years = tune_knn(x_train_used, y_train, years_train, month_cols = month_cols)
-            show_tuning(tuning_results, validate_years, knn_k, knn_p, knn_weight, f"knn_tuning_{tag}.csv")
-            knn_note = " (chosen by validation)"
+    predictions = {}
+    settings = {}
 
-        x_train_knn = x_train_scaled
-        x_test_knn = x_test_scaled
-        knn_setting = f"k={knn_k}; p={knn_p}"
-        if month_cols is not None:
-            x_train_knn = weight_month(x_train_scaled, month_cols, knn_weight)
-            x_test_knn = weight_month(x_test_scaled, month_cols, knn_weight)
-            knn_setting += f"; month weight={knn_weight}"
-        print("\nRunning KNN...")
-        predictions["KNN"] = knn_predict(x_train_knn, y_train, x_test_knn, knn_k, knn_p)
-        settings["KNN"] = knn_setting + knn_note
- 
-        print("Running Naive Bayes...")
-        nb_model = training_classifier(x_train_scaled, y_train, NAIVE_BAYES_SMOOTHING, group_sizes)
-        predictions["Naive Bayes"] = prediction(x_test_scaled, *nb_model)
-        settings["Naive Bayes"] = f"smoothing k={NAIVE_BAYES_SMOOTHING}"
- 
-        print("Training Perceptron...")
-        # the training prints every epoch, so the printing is hidden here
-        with contextlib.redirect_stdout(io.StringIO()):
-            weights = train_perceptron(x_train_scaled, y_train)
-        predictions["Perceptron"] = predict_perceptron(x_test_scaled, weights)
-        settings["Perceptron"] = "see perceptron.py"
- 
-        # (2o2) shows and collects the results of each model
-        for name in predictions:
-            print(f"\n================ {name.upper()} [{feature_set}] ================")
-            results = evaluate_model(y_test, predictions[name], baselines = baselines, model_name = name)
-            rows.append(result_row(name, "model", feature_set, settings[name], results))
- 
-    # (3_3) collects the results of the baselines
+    # --- KNN (Back to base tayo with knn) ---
+    knn_k, knn_p = KNN_K, KNN_P
+    knn_note = ""
+    if TUNE_KNN:
+        print("\nTuning KNN on base behavioral features...")
+        knn_k, knn_p, _, tuning_results, validate_years = tune_knn(x_train, y_train, years_train, month_cols=None)
+        show_tuning(tuning_results, validate_years, knn_k, knn_p, 1, f"knn_tuning_base.csv")
+        knn_note = " (chosen by validation)"
+    
+    print("\nRunning KNN...")
+    predictions["KNN"] = knn_predict(x_train_scaled, y_train, x_test_scaled, knn_k, knn_p)
+    settings["KNN"] = f"k={knn_k}; p={knn_p}" + knn_note
+
+    # --- PERCEPTRON (Use base features (with sin and cos)) ---
+    print("\nTraining Perceptron...")
+    with contextlib.redirect_stdout(io.StringIO()):
+        weights = train_perceptron(x_train_scaled, y_train)
+    predictions["Perceptron"] = predict_perceptron(x_test_scaled, weights)
+    settings["Perceptron"] = "see perceptron_training.csv"
+
+    # --- NAIVE BAYES (Siya nalang mag one-hot) ---
+    print("\nRunning Naive Bayes...")
+    # Passing group_sizes=[12] so it treats the months categorically but region behavioral metrics as continuous
+    nb_model = training_classifier(x_train_onehot_scaled, y_train, NAIVE_BAYES_SMOOTHING, group_sizes)
+    predictions["Naive Bayes"] = prediction(x_test_onehot_scaled, *nb_model)
+    settings["Naive Bayes"] = f"smoothing k={NAIVE_BAYES_SMOOTHING}"
+
+    # Evaluate and Save
+    for name in predictions:
+        print(f"\n================ {name.upper()} ================")
+        results = evaluate_model(y_test, predictions[name], baselines=baselines, model_name=name)
+        feat_tag = "month one-hot" if name == "Naive Bayes" else "base behavioral"
+        rows.append(result_row(name, "model", feat_tag, settings[name], results))
+
     for name, baseline_predictions in baselines.items():
         rows.append(result_row(name, "baseline", "raw features", "", compute_metrics(y_test, baseline_predictions)))
  
@@ -354,9 +334,9 @@ def main():
  
     # shows a summary of everything that was saved
     print("\n================ SUMMARY ================")
-    print(f"{'Method':<22}{'Features':<16}{'Accuracy':>10}{'Macro F1':>10}")
+    print(f"{'Method':<22}{'Features':<20}{'Accuracy':>10}{'Macro F1':>10}")
     for row in rows:
-        print(f"{row[0]:<22}{row[2]:<16}{row[4]:>10}{row[7]:>10}")
+        print(f"{row[0]:<22}{row[2]:<20}{row[4]:>10}{row[7]:>10}")
     print(f"\nResults saved to {RESULTS_FILE}")
  
 if __name__ == "__main__":
