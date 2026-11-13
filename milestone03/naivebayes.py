@@ -7,32 +7,22 @@ from evaluation import evaluate_model, make_baselines
 # ------------------------------------------------------------------
 # Training Naive Bayes Classifier
 # ------------------------------------------------------------------
-def training_classifier(x_train, y_train, k, group_sizes = None):
+def training_classifier(x_train, y_train, k):
     # ------------------------------------------------------------------
     # Classes
     # ------------------------------------------------------------------
     # 2 classes of the target variable (Up or Down)
     classes = np.unique(y_train) # 1 = Up, 0 = Down
-    # sizes of the one-hot groups at the start of the features, [18] for the regions or [18, 12] for the regions and months
-    if group_sizes is None:
-        group_sizes = [len(x_train[0]) - 7] # 7 = columns for [month_sin, month_cos, previous_revenue, previous_3month_mean, previous_3month_volatility, previous_month_mom_growth, historical_median_mom_growth]
-    region_col = sum(group_sizes) # index of the first numeric column
+    region_col = len(x_train[0]) - 7 # index of the region column (7 = columns for [month_sin, month_cos, previous_revenue, previous_3month_mean, previous_3month_volatility, previous_month_mom_growth, historical_median_mom_growth])
 
-    # --- HI bali may one-hot features ren here since it uses k ren --
     mean = {}
     variance = {}
     class_prior = {}
     p_region = {}
     for c in classes:
         x_c = x_train[y_train == c]
-        # -- ONE HOT ADDED HERE RIN -- (KoK)
-        # count occurrences of each category of each one-hot group for class c and apply Laplace smoothing
-        p_region[c] = []
-        start = 0
-        for size in group_sizes:
-            group_counts = np.sum(x_c[:, start:start + size], axis=0)
-            p_region[c].append((group_counts + k) / (len(x_c) + k * size))
-            start += size
+        region_counts = np.sum(x_c[:, :region_col], axis=0)  # count occurrences of each region for class c
+        p_region[c] = (region_counts + k) / (len(x_c) + k * region_col)  # apply Laplace smoothing
         
         #Calculate Mean and Variance
         mean[c] = np.mean(x_c[:, region_col:], axis=0)
@@ -40,31 +30,22 @@ def training_classifier(x_train, y_train, k, group_sizes = None):
 
         #P(class c) = (# of instances in class c) / (total # of instances)
         class_prior[c] = len(x_c) / len(x_train)
-    return classes, region_col, mean, variance, class_prior, p_region, group_sizes
+    return classes, region_col, mean, variance, class_prior, p_region
 
 # ------------------------------------------------------------------
 # Prediction using Naive Bayes Classifier
 # ------------------------------------------------------------------
-def prediction(x_test, classes, region_col, mean, variance, class_prior, p_region, group_sizes = None):
-    if group_sizes is None:
-        group_sizes = [region_col]
+def prediction(x_test, classes, region_col, mean, variance, class_prior, p_region):
     predictions = []
     for test in x_test:
-        # index of the 1 inside each one-hot group
-        group_indices = []
-        start = 0
-        for size in group_sizes:
-            group_index = 0
-            for i in range(size):
-                if test[start + i] == 1:
-                    group_index = i
-            group_indices.append(group_index)
-            start += size
+        region_index = 0
+        for i in range(region_col):
+            if test[i] == 1:
+                region_index = i
         scores = {}
         for c in classes:
             score = math.log(class_prior[c]) # score = log(P(class c))
-            for g in range(len(group_sizes)):
-                score = score + math.log(max(p_region[c][g][group_indices[g]], 1e-10)) # score = score + log(P(category of group g | class c))
+            score = score + math.log(max(p_region[c][region_index], 1e-10)) # score = score + log(P(region | class c))
 
             for j in range(region_col, len(test)):
                 x = test[j]
@@ -104,8 +85,8 @@ def naive_bayes():
             print("Please enter a valid input")
 
     x_train_scaled, x_test_scaled = normalize_data(x_train, x_test)
-    classes, region_col, mean, variance, class_prior, p_region, group_sizes = training_classifier(x_train_scaled, y_train, k)
-    predictions = prediction(x_test_scaled, classes, region_col, mean, variance, class_prior, p_region, group_sizes)
+    classes, region_col, mean, variance, class_prior, p_region = training_classifier(x_train_scaled, y_train, k)
+    predictions = prediction(x_test_scaled, classes, region_col, mean, variance, class_prior, p_region)
     # baselines use raw data (unnormalized)
     baselines = make_baselines(x_train, y_train, x_test)
     evaluate_model(y_test, predictions, baselines=baselines, model_name="Naive Bayes")
