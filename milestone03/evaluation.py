@@ -6,7 +6,7 @@ import random
 import numpy as np
 
 # names of the two classes, 0 and 1
-CLASS_NAMES = ["Down", "Up"]
+CLASS_NAMES = ["At/Below", "Above"]
 
 # (OwO) --------------------------------------------------------------------------
 # Metrics
