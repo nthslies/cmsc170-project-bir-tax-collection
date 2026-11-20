@@ -1,10 +1,26 @@
 # imports
 import csv
+import math
+import random
 import numpy as np
 from filereader import load_data
 from normalize import normalize_data
 from evaluation import evaluate_model, make_baselines, CLASS_NAMES
 
+
+# def add_month_onehot(x):
+#     n_regions = x.shape[1] - 7
+#     months = np.zeros((len(x), 12))
+#     for i in range(len(x)):
+#         angle = math.atan2(x[i][n_regions], x[i][n_regions + 1]) % (2 * math.pi)
+#         month = int(round(angle / (2 * math.pi) * 12)) % 12
+#         months[i][month] = 1.0
+#     return np.hstack([x, months]) 
+
+# number of training rows the weights get wrong (used to keep the best weights, "pocket")
+def count_errors(w, x_full, d):
+    predicted = np.where(x_full @ w > 0, 1.0, -1.0)
+    return int(np.sum(predicted != d))
 
 # function to train perceptron
 def train_perceptron(x_train, y_train):
@@ -23,6 +39,14 @@ def train_perceptron(x_train, y_train):
     # weight vectors
     w = np.zeros(1 + num_features) 
     w[0] = b
+
+    # full training matrix, only used to count errors for the best weights
+    x_all = np.array([[1.0] + features for features, _ in data])
+    d_all = np.array([d for _, d in data])
+    best_w = w.copy()
+    best_errors = count_errors(w, x_all, d_all)
+    best_epoch = 0
+    rng = random.Random(170)
 
     print(f"Learning Rate = {r}")
     print(f"Bias, w0 = {w[0]}")
@@ -50,8 +74,11 @@ def train_perceptron(x_train, y_train):
             header.extend(["v", "y", "d"])
             writer.writerow(header)
             epoch_update = 0
+            order = list(range(len(data)))
+            rng.shuffle(order)
             # for activating perceptron
-            for x_features, d in data:
+            for index in order:
+                x_features, d = data[index]
                 x_full = np.array([1.0] + x_features)
                 v = np.dot(w, x_full)
                 y = 1.0 if v > 0 else -1.0
@@ -70,6 +97,13 @@ def train_perceptron(x_train, y_train):
                 if y != d:
                     w = w + r * (d - y) * x_full
                     epoch_update += 1
+
+            # keeps the weights with the fewest training errors so far
+            errors = count_errors(w, x_all, d_all)
+            if errors < best_errors:
+                best_errors = errors
+                best_w = w.copy()
+                best_epoch = epoch
                 
             print(f"Weight updates: {epoch_update}")
             # saves weight updates for current epoch
@@ -78,11 +112,20 @@ def train_perceptron(x_train, y_train):
             # checks convergence
             if epoch_update == 0:
                 converged = True
+                best_w = w.copy()
+                best_errors = 0
+                best_epoch = epoch
                 break
 
         # saves final weights and convergence status
         writer.writerow(["Final Adjusted Weights"])
         writer.writerow([f"{weight:.4f}" for weight in w])
+        writer.writerow(["Final Epoch Weights"])
+        writer.writerow([f"{weight:.4f}" for weight in w])
+        writer.writerow(["Best Pocket Weights"])
+        writer.writerow([f"{weight:.4f}" for weight in best_w])
+        writer.writerow(["Best Epoch", best_epoch])
+        writer.writerow(["Best Training Errors", best_errors])
         if converged:
             writer.writerow(["Training converged"])
         else:
@@ -96,7 +139,7 @@ def train_perceptron(x_train, y_train):
         else:
             print("Training did not converge within 100 epochs")
 
-        return w
+        return best_w
 
 # function to predict perceptron
 def predict_perceptron(x_test, w):
