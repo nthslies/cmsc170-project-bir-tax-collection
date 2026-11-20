@@ -184,7 +184,6 @@ def save_results(results):
 
     print("Results saved to perceptron_training.csv")
 
-
 def main():
     # loads data
     x_train, y_train, x_test, y_test = load_data()
