@@ -232,9 +232,9 @@ def plot_model(rows, folder):
     for row in rows:
         if row[1] == "model":
             print("DEBUG ROW:", row)
-            models.append(row[0])
-            accuracies.append(float(row[3]))
-            macro_f1s.append(float(row[6]))
+            models.append(f"{row[0]} ({row[2]})")
+            accuracies.append(float(row[4]))
+            macro_f1s.append(float(row[7]))
     if not models:
         print("No models found to plot.")
         return
