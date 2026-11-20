@@ -1,0 +1,578 @@
+/* =====================================================
+   Palette: cream #F2EAE0 | teal #B4D3D9 | lavender #BDA6CE | purple #9B8EC7
+   ===================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+/* ---------- variables ---------- */
+:root {
+    /* palette from the color picture */
+    --cream: #F2EAE0;
+    --teal: #B4D3D9;
+    --lavender: #BDA6CE;
+    --purple: #9B8EC7;
+
+    /* darker shades of the palette purple so text and buttons stay readable */
+    --purple-deep: #6A5AB0;
+    --ink: #2D2850;
+    --ink-soft: #5B5780;
+
+    /* glass */
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-strong: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.78);
+    --shadow: 0 18px 50px rgba(106, 90, 176, 0.18);
+    --shadow-small: 0 8px 24px rgba(106, 90, 176, 0.15);
+    --radius: 24px;
+}
+
+/* ---------- base ---------- */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--cream) 0%, var(--teal) 48%, var(--lavender) 100%);
+}
+
+/* blurred color blobs behind the page, like the reference */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: -1;
+}
+
+body::before {
+    width: 560px;
+    height: 560px;
+    top: -160px;
+    left: -140px;
+    background: radial-gradient(circle, rgba(155, 142, 199, 0.65), transparent 70%);
+}
+
+body::after {
+    width: 620px;
+    height: 620px;
+    right: -180px;
+    bottom: -200px;
+    background: radial-gradient(circle, rgba(180, 211, 217, 0.9), transparent 70%);
+}
+
+a {
+    color: var(--purple-deep);
+}
+
+a:focus-visible {
+    outline: 3px solid var(--purple);
+    outline-offset: 3px;
+}
+
+/* ---------- main glass container ---------- */
+.glass {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-bottom: 28px;
+    background: rgba(255, 255, 255, 0.38);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid var(--glass-border);
+    border-radius: 36px;
+    box-shadow: var(--shadow);
+}
+
+/* ---------- navigation (floating pill) ---------- */
+header#top {
+    position: sticky;
+    top: 14px;
+    z-index: 100;
+    padding: 18px 20px 6px;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 6px;
+    background: var(--glass-strong);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    box-shadow: var(--shadow-small);
+}
+
+.nav-item a {
+    display: block;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-item a:hover,
+.nav-item a:focus-visible {
+    background: var(--purple-deep);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* ---------- hero ---------- */
+.hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: clamp(320px, 46vw, 520px);
+    margin: 10px clamp(14px, 3vw, 28px) 0;
+    padding: 24px;
+    border-radius: 28px;
+    box-shadow: var(--shadow);
+    /* purple tint over the photo, photo fitted to the container */
+    background:
+        linear-gradient(120deg, rgba(106, 90, 176, 0.52), rgba(155, 142, 199, 0.28) 55%, rgba(180, 211, 217, 0.38)),
+        url("assets/accountant-calculating-profit-with-financial-analysis-graphs.jpg") center / cover no-repeat;
+}
+
+.hero h1 {
+    margin: 0;
+    max-width: 100%;
+}
+
+/* the title sits on a frosted panel in the middle of the image */
+.hero h1 span {
+    display: inline-block;
+    padding: 22px clamp(22px, 4vw, 48px);
+    font-size: clamp(1.9rem, 4.6vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.5);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid var(--glass-border);
+    border-radius: 26px;
+    box-shadow: 0 16px 44px rgba(45, 40, 80, 0.22);
+}
+
+.badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 18px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, var(--purple-deep), var(--purple));
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 18px;
+    box-shadow: var(--shadow-small);
+}
+
+/* ---------- button strip ---------- */
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 28px 0 0;
+}
+
+/* the link in the HTML has no text yet, so the strip is hidden.
+   delete this rule once the link has text and it will show as a pill button */
+.buttons {
+    display: none;
+}
+
+.btn-link {
+    display: inline-block;
+    padding: 13px 30px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    background: linear-gradient(135deg, var(--purple-deep), var(--purple));
+    border-radius: 999px;
+    box-shadow: var(--shadow-small);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(106, 90, 176, 0.3);
+}
+
+/* ---------- sections ---------- */
+.datasets,
+.methods,
+.evaluation,
+.results {
+    padding: 64px clamp(20px, 5vw, 56px) 8px;
+    scroll-margin-top: 90px;
+}
+
+/* section titles */
+.datasets > h1,
+.methods > h1,
+.evaluation > h1,
+.results > h1 {
+    margin: 0 0 34px;
+    text-align: center;
+    font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+
+.datasets > h1::after,
+.methods > h1::after,
+.evaluation > h1::after,
+.results > h1::after {
+    content: "";
+    display: block;
+    width: 64px;
+    height: 5px;
+    margin: 14px auto 0;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--purple), var(--teal));
+}
+
+/* ---------- dataset information ---------- */
+.datasets {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.datasets > h1 {
+    grid-column: 1 / -1;
+    margin-bottom: 10px;
+}
+
+/* shared card look */
+.dataset-grid,
+.methods-item,
+.eval-item {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.dataset-grid {
+    padding: 28px 30px;
+}
+
+.dataset-grid p {
+    margin: 0;
+    padding: 14px 0;
+    color: var(--ink-soft);
+    overflow-wrap: anywhere;
+    border-bottom: 1px dashed rgba(106, 90, 176, 0.28);
+}
+
+.dataset-grid p:first-child {
+    padding-top: 0;
+}
+
+.dataset-grid p:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.dataset-grid h2 {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+/* "Classification:" and "Clustering:" as small purple tags */
+.dataset-grid h3 {
+    display: inline-block;
+    margin: 18px 0 8px;
+    padding: 5px 16px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--purple-deep);
+    border-radius: 999px;
+}
+
+.dataset-grid ul {
+    margin: 6px 0 0;
+    padding-left: 1.2rem;
+    color: var(--ink-soft);
+}
+
+.dataset-grid li {
+    margin: 6px 0;
+}
+
+.dataset-grid li::marker {
+    color: var(--purple);
+}
+
+/* ---------- methods ---------- */
+.methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+}
+
+.methods-item {
+    position: relative;
+    padding: 28px 24px 24px;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* colored strip on top of each card, one color of the palette each */
+.methods-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--purple);
+}
+
+.methods-item:nth-child(1)::before { background: var(--teal); }
+.methods-item:nth-child(2)::before { background: var(--lavender); }
+.methods-item:nth-child(3)::before { background: var(--purple); }
+.methods-item:nth-child(4)::before { background: var(--purple-deep); }
+
+.methods-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 24px 56px rgba(106, 90, 176, 0.26);
+}
+
+.methods-item h3 {
+    margin: 0 0 12px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--ink);
+}
+
+.methods-item ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+}
+
+.methods-item li {
+    margin: 8px 0;
+}
+
+.methods-item li::marker {
+    color: var(--purple);
+}
+
+/* ---------- evaluation metrics ---------- */
+.eval-grid {
+    display: flex;
+    justify-content: center;
+}
+
+.eval-item {
+    width: 100%;
+    max-width: 760px;
+    padding: 28px 30px;
+}
+
+.eval-item ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.eval-item h4 {
+    margin: 0 0 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--purple-deep);
+}
+
+/* metrics as chips */
+.eval-item ul ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.eval-item ul ul li {
+    padding: 8px 18px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--ink);
+    background: linear-gradient(135deg, rgba(180, 211, 217, 0.85), rgba(189, 166, 206, 0.85));
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+}
+
+/* ---------- results (for the content added later) ---------- */
+.results {
+    padding-bottom: 40px;
+}
+
+.results h2,
+.results h3 {
+    color: var(--ink);
+}
+
+.results p {
+    color: var(--ink-soft);
+}
+
+.results img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 18px auto;
+    border-radius: 18px;
+    box-shadow: var(--shadow-small);
+}
+
+.results table {
+    width: 100%;
+    margin: 18px 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    font-size: 0.93rem;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-small);
+}
+
+.results th {
+    padding: 12px 14px;
+    text-align: left;
+    color: #fff;
+    background: var(--purple-deep);
+}
+
+.results td {
+    padding: 11px 14px;
+    color: var(--ink-soft);
+    border-top: 1px solid rgba(106, 90, 176, 0.15);
+}
+
+.results tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* ---------- footer ---------- */
+footer#bottom {
+    width: 120px;
+    height: 6px;
+    margin: 28px auto 0;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--purple), var(--lavender), var(--teal));
+    opacity: 0.85;
+}
+
+/* ---------- tablet and phone ---------- */
+@media (max-width: 860px) {
+    .datasets {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nav-container {
+        flex-wrap: wrap;
+        justify-content: center;
+        border-radius: 28px;
+    }
+
+    .nav-item a {
+        padding: 9px 14px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 520px) {
+    body {
+        padding: 10px;
+    }
+
+    .glass {
+        border-radius: 26px;
+    }
+
+    /* on phones the menu scrolls away with the page so it does not cover the content */
+    header#top {
+        position: static;
+        padding: 12px 10px 4px;
+    }
+
+    .nav-item a {
+        padding: 8px 12px;
+        font-size: 0.78rem;
+    }
+
+    .hero {
+        border-radius: 20px;
+        padding: 16px;
+    }
+
+    .hero h1 span {
+        padding: 16px 20px;
+        border-radius: 20px;
+    }
+
+    .badge {
+        top: 12px;
+        right: 12px;
+        padding: 7px 12px;
+        font-size: 0.7rem;
+    }
+
+    .dataset-grid,
+    .eval-item {
+        padding: 22px 20px;
+    }
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    * {
+        transition: none !important;
+    }
+}
