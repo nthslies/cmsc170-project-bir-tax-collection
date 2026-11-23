@@ -514,15 +514,20 @@ header#top {
     margin: 0;
 }
 
-/* keeps the graphs small so they do not fill the whole page */
-.figure img {
-    width: 100%;
-    max-width: 460px;
+.results .figure img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 45vh;
     margin: 0 auto;
+    object-fit: contain;
 }
 
-.figure.single img {
-    max-width: 420px;
+/* the single model-comparison chart gets a little more room */
+.results .figure.single img {
+    max-width: min(100%, 520px);
+    max-height: 50vh;
 }
 
 .figure figcaption {
