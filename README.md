@@ -3,6 +3,8 @@
   # CMSC 170: BIR Tax Collection
   _by 2by2_ 
 
+  ## GitHub Page: https://nthslies.github.io/cmsc170-project-bir-tax-collection/
+
 </div>
 
 **Milestone 01 _(October 23, 2026)_**
@@ -11,5 +13,3 @@
 <br>
 
 **Milestone 02 _(October 30, 2026)_**
-
-https://nthslies.github.io/cmsc170-project-bir-tax-collection/
