@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang = "en">
+<head> <!--headers and titles-->
+    <meta charset = "UTF-8">
+    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
+    <title>[2by2] BIR Tax Collectio Analysisn</title>
+    <link rel = "stylesheet" type = "text/css" href = "styles.css">
+</head>
+
+<body> 
+    <div class="glass">
+    <header id = "top"> <!--header part-->
+        <div class = "nav-container"> <!--navigation container-->
+            <div class = "nav-item"><a href = "#dataset">Dataset Information</a></div>
+            <div class = "nav-item"><a href = "#methods">Methods of Algorithms</a></div>
+            <div class = "nav-item"><a href = "#evaluation">Evaluation Metrics</a></div>
+            <div class = "nav-item"><a href = "#results">Results and Discussion</a></div>
+        </div>
+    </header>
+
+    <div class="hero">
+        <h1><span>BIR Tax Collection Analysis</span></h1>
+        <div class="badge">CMSC 170<br>Project</div>
+    </div>
+
+    <div class = "buttons">
+        <a class = "btn-link" href = "" target = "_blank "> </a>
+    </div>
+
+    <div id = "datasets" class = "datasets">
+        <h1>Dataset Information</h1>
+        <div class = "dataset-grid">
+            <p>Title: BIR Tax Collection Data</p>
+            <p>Source: Bureau of Internal Revenue (BIR), Philippines, Better Gov PH Open Data Portal</p> 
+            <p>Direct Link: https://data.bettergov.ph/datasets/20</p>
+        </div>
+
+        <div class = "dataset-grid">
+            <h2>Objectives</21>
+            <h3>Classification:</h3>
+            <ul>
+                <li>Predict if the regional tax collections in a given period will increase or decrease in comparison to the same month of the previous year, using past collected data </li>
+                <li>2 Classes of Target Variable:</li>
+                <ul>
+                    <li>Up: Increase of tax collection compared to the same month of the previous year</li>
+                    <li>Down: Decrease or no change in the tax collection compared to the same month of the previous year </li>
+                </ul>
+            </ul>
+            <h3>Clustering:</h3>
+            <ul>
+                <li>Group regions into distinct economic profiles based on their tax collections from 2020 - 2024 in categories such as mean monthly tax collection, average annual growth rate, and collection volatility (standard deviations of monthly collections relative to the mean).</li>
+                <li>Profile each cluster after evaluating using the silhouette score and elbow method.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id = "methods" class = "methods">
+        <h1>Methods of Algorithms</h1>
+        <div class = "methods-grid">
+            <div class = "methods-item">
+                <h3>Naive Bayes Classifier</h3>
+                <ul>
+                    <li>fast probabilistic method that is suitable for simple numeric and categorical features</li>
+                    <li>can be used to model the independent probability distributions of each month/region in order to determine the likelihood of their revenue going “up” or “down”</li>
+                </ul>
+            </div>
+
+            <div class = "methods-item">
+                <h3>K-Nearest Neighbors (KNN)</h3>
+                <ul>
+                    <li>does not assume anything about the data </li>
+                    <li>can capture recurring seasonal patterns and regional similarities by matching current collection periods to similar past periods</li>
+                </ul>
+            </div>
+
+            <div class = "methods-item">
+                <h3>Perceptron</h3>
+                <ul>
+                    <li>learns a straight-line boundary between “up” and “down” by fixing its weights every time it makes a mistake</li>
+                    <li>acts as a linear baseline in order to test if revenue directional shifts are linearly separable</li>
+                </ul>
+            </div>
+
+            <div class = "methods-item">
+                <h3>K-Means Clustering</h3>
+                <ul>
+                    <li>can be useful for clustering regions with similar tax collection patterns into distinct economic profiles based on average monthly collections, growth rates, and volatility</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id = "evaluation" class = "evaluation">
+        <h1>Evaluation Metrics</h1>
+        <div class = "eval-grid">
+            <div class = "eval-item">
+                <ul>
+                    <li>
+                        <h4>for Naive Bayes, KNN, Perceptron</h4>
+                        <ul>
+                            <li>Accuracy</li>
+                            <li>Precision</li>
+                            <li>Recall</li>
+                            <li>Macro-F1 Score</li>
+                            <li>Confusion Matrix</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id = "results" class = "results">
+        <h1>Results and Discussion</h1>
+
+        <h2>Model Comparison</h2>
+        <figure class = "figure single">
+            <img src = "milestone03/results/graphs/model_performance.png" alt = "Accuracy and macro F1 of KNN, Naive Bayes and Perceptron">
+            <figcaption>KNN is the best of the three classifiers, with 0.8750 accuracy and 0.8749 macro F1. The Perceptron follows at 0.6898 and 0.6833, and Naive Bayes is lowest at 0.6481 and 0.6445.</figcaption>
+        </figure>
+
+        <h2>K-Means: Choosing the Number of Clusters</h2>
+        <div class = "figure-row">
+            <figure class = "figure">
+                <img src = "milestone03/results/graphs/elbow_method_region.png" alt = "Elbow method for k from 2 to 17, elbow at k = 6">
+                <figcaption>Elbow method. Inertia drops fast up to about k = 6 and then flattens, but the bend is soft, so it is only a hint.</figcaption>
+            </figure>
+            <figure class = "figure">
+                <img src = "milestone03/results/graphs/silhouette_by_k_region.png" alt = "Mean silhouette score for k from 2 to 17, highest at k = 3">
+                <figcaption>Silhouette score. It is highest at k = 3 (0.3488) and falls to 0.0563 at k = 17. We chose k = 3 because it has the best score among the k with no one-region cluster.</figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <footer id = "bottom">
+
+    </footer>
+</div>
+</body>
+</html>
