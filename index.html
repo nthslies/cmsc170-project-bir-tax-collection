@@ -2,16 +2,16 @@
 <html lang = "en">
 <head> <!--headers and titles-->
     <meta charset = "UTF-8">
-    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
-    <title>[2by2] BIR Tax Collectio Analysisn</title>
+    <meta name = "viewport" content = "width=device-width, initial-scale=1.0">
+    <title>[2by2] BIR Tax Collection Analysis</title>
     <link rel = "stylesheet" type = "text/css" href = "styles.css">
 </head>
 
-<body> 
-    <div class="glass">
+<body>
+    <div class = "glass">
     <header id = "top"> <!--header part-->
         <div class = "nav-container"> <!--navigation container-->
-            <div class = "nav-item"><a href = "#dataset">Dataset Information</a></div>
+            <div class = "nav-item"><a href = "#datasets">Dataset Information</a></div>
             <div class = "nav-item"><a href = "#methods">Methods of Algorithms</a></div>
             <div class = "nav-item"><a href = "#evaluation">Evaluation Metrics</a></div>
             <div class = "nav-item"><a href = "#results">Results and Discussion</a></div>
@@ -24,27 +24,28 @@
     </div>
 
     <div class = "buttons">
-        <a class = "btn-link" href = "" target = "_blank "> </a>
+        <a class = "btn-link" href = "" target = "_blank"> </a>
     </div>
 
     <div id = "datasets" class = "datasets">
         <h1>Dataset Information</h1>
         <div class = "dataset-grid">
             <p>Title: BIR Tax Collection Data</p>
-            <p>Source: Bureau of Internal Revenue (BIR), Philippines, Better Gov PH Open Data Portal</p> 
+            <p>Source: Bureau of Internal Revenue (BIR), Philippines, Better Gov PH Open Data Portal</p>
             <p>Direct Link: https://data.bettergov.ph/datasets/20</p>
         </div>
 
         <div class = "dataset-grid">
-            <h2>Objectives</21>
+            <h2>Objectives</h2>
             <h3>Classification:</h3>
             <ul>
-                <li>Predict if the regional tax collections in a given period will increase or decrease in comparison to the same month of the previous year, using past collected data </li>
-                <li>2 Classes of Target Variable:</li>
-                <ul>
-                    <li>Up: Increase of tax collection compared to the same month of the previous year</li>
-                    <li>Down: Decrease or no change in the tax collection compared to the same month of the previous year </li>
-                </ul>
+                <li>Predict if the regional tax collections in a given period will increase or decrease in comparison to the same month of the previous year, using past collected data</li>
+                <li>2 Classes of Target Variable:
+                    <ul>
+                        <li>Up: Increase of tax collection compared to the same month of the previous year</li>
+                        <li>Down: Decrease or no change in the tax collection compared to the same month of the previous year</li>
+                    </ul>
+                </li>
             </ul>
             <h3>Clustering:</h3>
             <ul>
@@ -53,7 +54,7 @@
             </ul>
         </div>
     </div>
-    
+
     <div id = "methods" class = "methods">
         <h1>Methods of Algorithms</h1>
         <div class = "methods-grid">
@@ -68,7 +69,7 @@
             <div class = "methods-item">
                 <h3>K-Nearest Neighbors (KNN)</h3>
                 <ul>
-                    <li>does not assume anything about the data </li>
+                    <li>does not assume anything about the data</li>
                     <li>can capture recurring seasonal patterns and regional similarities by matching current collection periods to similar past periods</li>
                 </ul>
             </div>
@@ -89,44 +90,117 @@
             </div>
         </div>
     </div>
-    
+
     <div id = "evaluation" class = "evaluation">
         <h1>Evaluation Metrics</h1>
         <div class = "eval-grid">
+
             <div class = "eval-item">
-                <ul>
-                    <li>
-                        <h4>for Naive Bayes, KNN, Perceptron</h4>
+                <h2 class = "eval-title">Naive Bayes, KNN, Perceptron</h2>
+                <div class = "metric-grid">
+
+                    <div class = "metric">
+                        <div class = "formula">Accuracy = (TP + TN) / (TP + TN + FP + FN)</div>
+                        <h4>Accuracy</h4>
                         <ul>
-                            <li>Accuracy</li>
-                            <li>Precision</li>
-                            <li>Recall</li>
-                            <li>Macro-F1 Score</li>
-                            <li>Confusion Matrix</li>
+                            <li>the fraction of all predictions that are correct in each model</li>
+                            <li>provides an overall measure of the performance</li>
                         </ul>
-                    </li>
-                </ul>
+                    </div>
+
+                    <div class = "metric">
+                        <div class = "formula">Precision = TP / (TP + FP)</div>
+                        <h4>Precision</h4>
+                        <ul>
+                            <li>examines how many of the predicted “up” cases were actually “up”</li>
+                            <li>higher precision insinuates that there are fewer false positive predictions</li>
+                        </ul>
+                    </div>
+
+                    <div class = "metric">
+                        <div class = "formula">Recall = TP / (TP + FN)</div>
+                        <h4>Recall</h4>
+                        <ul>
+                            <li>examines how many of the actual “up” data were successfully identified</li>
+                            <li>higher recall indicates that there are fewer missed increases in tax collection</li>
+                        </ul>
+                    </div>
+
+                    <div class = "metric">
+                        <div class = "formula">
+                            F1<sub>c</sub> = 2 · P<sub>c</sub> · R<sub>c</sub> / (P<sub>c</sub> + R<sub>c</sub>)<br>
+                            Macro-F1 = (F1<sub>up</sub> + F1<sub>down</sub>) / 2
+                        </div>
+                        <h4>Macro-F1 Score</h4>
+                        <ul>
+                            <li>gives equal importance to “up” and “down” cases even when they have different number of observations</li>
+                            <li>can balance out the number of ups and downs</li>
+                        </ul>
+                    </div>
+
+                    <div class = "metric">
+                        <div class = "formula">
+                            <table class = "cm" aria-label = "Confusion matrix layout">
+                                <tr><th></th><th>Pred. Up</th><th>Pred. Down</th></tr>
+                                <tr><th>Actual Up</th><td>TP</td><td>FN</td></tr>
+                                <tr><th>Actual Down</th><td>FP</td><td>TN</td></tr>
+                            </table>
+                        </div>
+                        <h4>Confusion Matrix</h4>
+                        <ul>
+                            <li>a 2 x 2 matrix is used in order to examine the types of correct and incorrect predictions</li>
+                            <li>identifies the type of mistakes made by each model</li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class = "eval-item">
+                <h2 class = "eval-title">K-Means Clustering</h2>
+                <div class = "metric-grid">
+
+                    <div class = "metric">
+                        <div class = "formula">s = (b − a) / max(a, b)</div>
+                        <h4>Silhouette Score</h4>
+                        <ul>
+                            <li>For each point, a is the average distance to its own cluster and b is the average distance to the nearest other cluster.</li>
+                            <li>It ranges from -1 to 1, and higher values mean clusters are better separated.</li>
+                            <li>Report the average over all points, and compare it across values of k.</li>
+                        </ul>
+                    </div>
+
+                    <div class = "metric">
+                        <div class = "formula">WCSS = Σ<sub>k=1..K</sub> Σ<sub>x∈C<sub>k</sub></sub> ‖x − μ<sub>k</sub>‖²</div>
+                        <h4>Inertia (WCSS) with Elbow Method</h4>
+                        <ul>
+                            <li>Inertia measures the sum of squared distances from data points to their assigned centroids, continually decreasing as the number of clusters increases (meaning tighter groupings).</li>
+                            <li>To determine the optimal number of clusters rather than score overall model quality, the elbow method plots this inertia against cluster count so you can select the point where the curve bends and diminishing returns flatten out.</li>
+                        </ul>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
-    
+
     <div id = "results" class = "results">
         <h1>Results and Discussion</h1>
 
         <h2>Model Comparison</h2>
         <figure class = "figure single">
-            <img src = "milestone03/results/graphs/model_performance.png" alt = "Accuracy and macro F1 of KNN, Naive Bayes and Perceptron">
+            <img src = "milestone03/results/graphs/model_performance.png" alt="Accuracy and macro F1 of KNN, Naive Bayes and Perceptron">
             <figcaption>KNN is the best of the three classifiers, with 0.8750 accuracy and 0.8749 macro F1. The Perceptron follows at 0.6898 and 0.6833, and Naive Bayes is lowest at 0.6481 and 0.6445.</figcaption>
         </figure>
 
         <h2>K-Means: Choosing the Number of Clusters</h2>
         <div class = "figure-row">
             <figure class = "figure">
-                <img src = "milestone03/results/graphs/elbow_method_region.png" alt = "Elbow method for k from 2 to 17, elbow at k = 6">
+                <img src = "milestone03/results/graphs/elbow_method_region.png" alt="Elbow method for k from 2 to 17, elbow at k = 6">
                 <figcaption>Elbow method. Inertia drops fast up to about k = 6 and then flattens, but the bend is soft, so it is only a hint.</figcaption>
             </figure>
             <figure class = "figure">
-                <img src = "milestone03/results/graphs/silhouette_by_k_region.png" alt = "Mean silhouette score for k from 2 to 17, highest at k = 3">
+                <img src = "milestone03/results/graphs/silhouette_by_k_region.png" alt="Mean silhouette score for k from 2 to 17, highest at k = 3">
                 <figcaption>Silhouette score. It is highest at k = 3 (0.3488) and falls to 0.0563 at k = 17. We chose k = 3 because it has the best score among the k with no one-region cluster.</figcaption>
             </figure>
         </div>

@@ -402,44 +402,110 @@ header#top {
 /* ---------- evaluation metrics ---------- */
 .eval-grid {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .eval-item {
     width: 100%;
-    max-width: 760px;
     padding: 28px 30px;
 }
 
-.eval-item ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.eval-item h4 {
-    margin: 0 0 14px;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--purple-deep);
-}
-
-/* metrics as chips */
-.eval-item ul ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.eval-item ul ul li {
-    padding: 8px 18px;
-    font-size: 0.92rem;
-    font-weight: 600;
+.eval-title {
+    margin: 0 0 20px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     color: var(--ink);
-    background: linear-gradient(135deg, rgba(180, 211, 217, 0.85), rgba(189, 166, 206, 0.85));
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 20px 18px;
+    background: var(--glass-strong);
     border: 1px solid var(--glass-border);
-    border-radius: 999px;
+    border-left: 6px solid var(--purple);
+    border-radius: 18px;
+    box-shadow: var(--shadow-small);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.metric:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 24px 56px rgba(106, 90, 176, 0.26);
+}
+
+.metric:nth-child(5n + 1) { border-left-color: var(--teal); }
+.metric:nth-child(5n + 2) { border-left-color: var(--lavender); }
+.metric:nth-child(5n + 3) { border-left-color: var(--purple); }
+.metric:nth-child(5n + 4) { border-left-color: var(--purple-deep); }
+.metric:nth-child(5n + 5) { border-left-color: var(--teal); }
+
+.formula {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+    font-size: 1rem;
+    line-height: 1.7;
+    text-align: center;
+    color: var(--purple-deep);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px dashed rgba(106, 90, 176, 0.35);
+    border-radius: 12px;
+    overflow-x: auto;
+}
+
+.metric h4 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.metric ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.93rem;
+    color: var(--ink-soft);
+}
+
+.metric li {
+    margin: 6px 0;
+}
+
+.metric li::marker {
+    color: var(--purple);
+}
+
+/* confusion matrix inside the formula box */
+.cm {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.85rem;
+}
+
+.cm th,
+.cm td {
+    padding: 6px 8px;
+    border: 1px solid rgba(106, 90, 176, 0.25);
+}
+
+.cm th {
+    font-weight: 600;
+    color: var(--ink-soft);
+}
+
+.cm td {
+    font-weight: 700;
+    color: var(--purple-deep);
 }
 
 /* ---------- results (for the content added later) ---------- */
@@ -507,12 +573,29 @@ header#top {
 
 .figure {
     margin: 0 auto 28px;
-    text-align: center;
+    padding: 20px 20px 18px;
+    text-align: left;
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    border-left: 6px solid var(--purple);
+    border-radius: 18px;
+    box-shadow: var(--shadow-small);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.figure:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 24px 56px rgba(106, 90, 176, 0.26);
 }
 
 .figure-row .figure {
     margin: 0;
 }
+
+/* a different palette color on the left edge of each card */
+.figure.single                      { border-left-color: var(--teal); }
+.figure-row .figure:nth-child(1)    { border-left-color: var(--lavender); }
+.figure-row .figure:nth-child(2)    { border-left-color: var(--purple-deep); }
 
 .results .figure img {
     display: block;
@@ -524,16 +607,19 @@ header#top {
     object-fit: contain;
 }
 
-/* the single model-comparison chart gets a little more room */
+.figure.single {
+    max-width: 620px;
+}
+
 .results .figure.single img {
     max-width: min(100%, 520px);
     max-height: 50vh;
 }
 
 .figure figcaption {
-    max-width: 520px;
-    margin: 12px auto 0;
-    font-size: 0.93rem;
+    max-width: none;
+    margin: 16px 0 0;
+    font-size: 0.95rem;
     color: var(--ink-soft);
 }
 

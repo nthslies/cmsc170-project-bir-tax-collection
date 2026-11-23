@@ -8,14 +8,14 @@ from normalize import normalize_data
 from evaluation import evaluate_model, make_baselines, CLASS_NAMES
 
 
-# def add_month_onehot(x):
-#     n_regions = x.shape[1] - 7
-#     months = np.zeros((len(x), 12))
-#     for i in range(len(x)):
-#         angle = math.atan2(x[i][n_regions], x[i][n_regions + 1]) % (2 * math.pi)
-#         month = int(round(angle / (2 * math.pi) * 12)) % 12
-#         months[i][month] = 1.0
-#     return np.hstack([x, months]) 
+def add_month_onehot(x):
+    n_regions = x.shape[1] - 7
+    months = np.zeros((len(x), 12))
+    for i in range(len(x)):
+        angle = math.atan2(x[i][n_regions], x[i][n_regions + 1]) % (2 * math.pi)
+        month = int(round(angle / (2 * math.pi) * 12)) % 12
+        months[i][month] = 1.0
+    return np.hstack([x, months]) 
 
 # number of training rows the weights get wrong (used to keep the best weights, "pocket")
 def count_errors(w, x_full, d):
