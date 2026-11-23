@@ -114,16 +114,22 @@
         <h1>Results and Discussion</h1>
 
         <h2>Model Comparison</h2>
-        <img src = "milestone03/results/graphs/model_performance.png" alt = "Accuracy and macro F1 of KNN, Naive Bayes and Perceptron">
-        <p>KNN has the highest accuracy and macro F1 of the three classifiers.</p>
+        <figure class = "figure single">
+            <img src = "milestone03/results/graphs/model_performance.png" alt = "Accuracy and macro F1 of KNN, Naive Bayes and Perceptron">
+            <figcaption>KNN is the best of the three classifiers, with 0.8750 accuracy and 0.8749 macro F1. The Perceptron follows at 0.6898 and 0.6833, and Naive Bayes is lowest at 0.6481 and 0.6445.</figcaption>
+        </figure>
 
-        <h2>K-Means: Elbow Method</h2>
-        <img src = "milestone03/results/graphs/elbow_method_region.png" alt = "Elbow method for k from 2 to 17, elbow at k = 6">
-        <p>Inertia keeps falling as k grows. The elbow is at k = 6, but the bend is soft.</p>
-
-        <h2>K-Means: Silhouette Score</h2>
-        <img src = "milestone03/results/graphs/silhouette_by_k_region.png" alt = "Mean silhouette score for k from 2 to 17, highest at k = 3">
-        <p>The silhouette is highest at k = 3, among the k with no one-region cluster. It falls as k gets larger.</p>
+        <h2>K-Means: Choosing the Number of Clusters</h2>
+        <div class = "figure-row">
+            <figure class = "figure">
+                <img src = "milestone03/results/graphs/elbow_method_region.png" alt = "Elbow method for k from 2 to 17, elbow at k = 6">
+                <figcaption>Elbow method. Inertia drops fast up to about k = 6 and then flattens, but the bend is soft, so it is only a hint.</figcaption>
+            </figure>
+            <figure class = "figure">
+                <img src = "milestone03/results/graphs/silhouette_by_k_region.png" alt = "Mean silhouette score for k from 2 to 17, highest at k = 3">
+                <figcaption>Silhouette score. It is highest at k = 3 (0.3488) and falls to 0.0563 at k = 17. We chose k = 3 because it has the best score among the k with no one-region cluster.</figcaption>
+            </figure>
+        </div>
     </div>
 
     <footer id = "bottom">
