@@ -231,8 +231,9 @@ def plot_model(rows, folder):
     macro_f1s = []
 
     for row in rows:
-        if row[1] == "model":
-            print("DEBUG ROW:", row)
+        if row[1] == "model" and "one-hot" in row[2]:
+            if row[0] == "Naive Bayes":
+                continue
             models.append(f"{row[0]} ({row[2]})")
             accuracies.append(float(row[4]))
             macro_f1s.append(float(row[7]))
@@ -241,7 +242,7 @@ def plot_model(rows, folder):
         return
     data = list(zip(accuracies, macro_f1s))
     metrics = ["Accuracy", "Macro F1"]
-    colors = ["blue", "orange"]
+    colors = ["purple", "lavender"]
     
     dim = len(data[0])
     w = 0.6
@@ -252,7 +253,9 @@ def plot_model(rows, folder):
     for i in range(len(data[0])):
         y = [d[i] for d in data]
         b = ax.bar(x + i * dimw, y, 
-                dimw, 
+                dimw,
+                color = colors[i],
+                label = metrics[i],
                 bottom = 0.001)
 
     ax.set_xticks(x + w / 2 - dimw / 2)
@@ -262,6 +265,50 @@ def plot_model(rows, folder):
     ax.legend(metrics)
 
     save_figure(fig, f"{folder}/model_performance.png")
+    plt.close(fig)
+# (OwO) --------------------------------------------------------------------------
+# Naive Bayes Plotting
+# (OwO) -------------------------------------------------------------------------- 
+def plot_naive_bayes(rows, folder):
+    models = []
+    accuracies = []
+    macro_f1s = []
+
+    for row in rows:
+        if row[1] == "model":
+            if "Naive Bayes" in row[0]:
+                if "one-hot" in row[2]:
+                    models.append(f"{row[0]} ({row[2]})")
+                    accuracies.append(float(row[4]))
+                    macro_f1s.append(float(row[7]))
+    if not models:
+        print("No models found to plot.")
+        return
+    data = list(zip(accuracies, macro_f1s))
+    metrics = ["Accuracy", "Macro F1"]
+    colors = ["purple", "lavender"]
+    
+    dim = len(data[0])
+    w = 0.6
+    dimw = w / dim
+
+    fig, ax = plt.subplots()
+    x = np.arange(len(data))
+    for i in range(len(data[0])):
+        y = [d[i] for d in data]
+        b = ax.bar(x + i * dimw, y, 
+                dimw,
+                color = colors[i],
+                label = metrics[i],
+                bottom = 0.001)
+
+    ax.set_xticks(x + w / 2 - dimw / 2)
+    ax.set_xticklabels(models)
+    ax.set_title("Naive Bayes Performance Comparison")
+    ax.set_ylabel("Score")
+    ax.legend(metrics)
+
+    save_figure(fig, f"{folder}/model_naivebayes.png")
     plt.close(fig)
 
 # added from kmeans
@@ -283,18 +330,16 @@ def save_figure(figure, path):
 # (OwO) --------------------------------------------------------------------------
 
 # KEEP copy of colors heeeere (O-O)
-CHART_CREAM = "#F2EAE0"
-CHART_TEAL = "#B4D3D9"
-CHART_LAVENDER = "#BDA6CE"
-CHART_PURPLE = "#9B8EC7"
-CHART_PURPLE_DEEP = "#6A5AB0"
-CHART_INK = "#2D2850"
-CHART_INK_SOFT = "#5B5780"
+LINE_COLORS = ["#6A5AB0", "#9B8EC7", "#B4D3D9"]
+LINE_MARKERS = ["o", "s", "^"]
+EDGE_COLOR = "#5B5780"
 
 # line chart of the validation macro f1 (top row) and macro precision (bottom row)
 # x axis is k, one line for each p, one column for each month weight
 # details is the list that tune_knn fills when it gets details = []
 def plot_knn_tuning(details, folder, tag, feature_label):
+    from matplotlib.lines import Line2D
+
     if not details:
         print("No tuning results to plot.")
         return
@@ -319,26 +364,23 @@ def plot_knn_tuning(details, folder, tag, feature_label):
     k_values.sort()
     weights.sort()
 
-    line_colors = [CHART_PURPLE_DEEP, CHART_PURPLE, CHART_TEAL]
-    line_markers = ["o", "s", "^"]
     metrics = [("macro_f1", "Macro-F1"), ("macro_precision", "Macro Precision")]
     x_positions = list(range(len(k_values)))
+    best_index = p_values.index(best["p"])
 
-    fig, axes = plt.subplots(2, len(weights), figsize = (max(9.0, 4.4 * len(weights) + 1.2), 7.6), sharex = True, sharey = "row", squeeze = False)
-    fig.patch.set_facecolor(CHART_CREAM)
+    fig, axes = plt.subplots(2, len(weights), figsize = (max(8.0, 4.4 * len(weights) + 1.2), 7.2), sharex = True, sharey = "row", squeeze = False)
 
     for row_index in range(2):
         metric, metric_name = metrics[row_index]
 
-        # same y range for the whole row, with room above for the label of the best point
+        # same y range for the whole row
         all_values = [row[metric] for row in details]
         low = min(all_values) - 0.03
-        high = max(all_values) + 0.10
+        high = max(all_values) + 0.03
 
         for column in range(len(weights)):
             weight = weights[column]
             ax = axes[row_index][column]
-            ax.set_facecolor("#FBF8F4")
 
             # one line for each p
             for i in range(len(p_values)):
@@ -346,60 +388,47 @@ def plot_knn_tuning(details, folder, tag, feature_label):
                 values = []
                 for k in k_values:
                     values.append(lookup[(p, k, weight)][metric])
-                ax.plot(x_positions, values, color = line_colors[i % 3], marker = line_markers[i % 3],
-                        markersize = 7, markeredgecolor = CHART_INK_SOFT, markeredgewidth = 0.8,
-                        linewidth = 2.4, label = f"p = {p:g}")
+                ax.plot(x_positions, values, color = LINE_COLORS[i % 3], marker = LINE_MARKERS[i % 3],
+                        markersize = 6, markeredgecolor = EDGE_COLOR, markeredgewidth = 0.8,
+                        linewidth = 2, label = f"p = {p:g}")
 
-            # star on the best macro f1 setting (shown in both rows so the precision there can be read)
+            # bigger point on the best macro f1 setting (shown in both rows so the precision there can be read)
             if weight == best["month_weight"]:
                 best_x = k_values.index(best["k"])
                 best_y = lookup[(best["p"], best["k"], weight)][metric]
-                ax.scatter([best_x], [best_y], marker = "*", s = 330, color = CHART_INK, edgecolor = "white", linewidth = 1.0, zorder = 5)
-                label_align = "center"
-                label_shift = 0
-                if best_x <= 1:
-                    label_align = "left"
-                    label_shift = -8
-                elif best_x >= len(k_values) - 2:
-                    label_align = "right"
-                    label_shift = 8
-                ax.annotate(f"best: k = {best['k']}, p = {best['p']:g}", (best_x, best_y), xytext = (label_shift, 16),
-                            textcoords = "offset points", ha = label_align, fontsize = 9, fontweight = "bold", color = CHART_INK)
+                ax.plot([best_x], [best_y], color = LINE_COLORS[best_index % 3], marker = LINE_MARKERS[best_index % 3],
+                        markersize = 14, markeredgecolor = EDGE_COLOR, markeredgewidth = 1.2, linestyle = "none", zorder = 5)
 
-            # looks
             ax.set_ylim(low, high)
             ax.set_xlim(-0.5, len(k_values) - 0.5)
             ax.set_xticks(x_positions)
             ax.set_xticklabels([str(k) for k in k_values])
-            ax.grid(True, color = CHART_LAVENDER, alpha = 0.4, linewidth = 0.8)
-            ax.set_axisbelow(True)
-            ax.tick_params(colors = CHART_INK_SOFT)
-            for side in ("top", "right"):
-                ax.spines[side].set_visible(False)
-            for side in ("left", "bottom"):
-                ax.spines[side].set_color(CHART_LAVENDER)
 
             if row_index == 0:
                 if feature_label == "base":
-                    ax.set_title("month_sin / month_cos (no month weight)", fontsize = 11, color = CHART_INK, fontweight = "bold")
+                    ax.set_title("month_sin / month_cos (no month weight)")
                 else:
-                    ax.set_title(f"Month weight = {weight}", fontsize = 11, color = CHART_INK, fontweight = "bold")
+                    ax.set_title(f"Month weight = {weight}")
             if column == 0:
-                ax.set_ylabel(f"{metric_name}\n(validation mean)", color = CHART_INK)
+                ax.set_ylabel(f"{metric_name} (validation mean)")
             if row_index == 1:
-                ax.set_xlabel("k (number of neighbors)", color = CHART_INK)
+                ax.set_xlabel("k (number of neighbors)")
 
-    # one legend for the p lines
+    # one legend, the p lines and what the bigger point is
     handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc = "lower center", ncol = len(p_values), frameon = False, fontsize = 10,
-               title = "Minkowski distance p (1 = city block, 2 = straight line)", title_fontsize = 9)
-    chart_title = "KNN Tuning: Macro-F1 and Macro Precision by k, p and month weight"
+    best_label = f"best Macro-F1: k = {best['k']}, p = {best['p']:g}"
+    if feature_label != "base":
+        best_label += f", month weight = {best['month_weight']}"
+    handles.append(Line2D([0], [0], color = LINE_COLORS[best_index % 3], marker = LINE_MARKERS[best_index % 3], markersize = 12,
+                          markeredgecolor = EDGE_COLOR, markeredgewidth = 1.2, linestyle = "none"))
+    labels.append(best_label)
+    fig.legend(handles, labels, loc = "lower center", ncol = len(handles), frameon = False)
+
     if feature_label == "base":
-        chart_title = "KNN Tuning: Macro-F1 and Macro Precision by k and p"
-    fig.suptitle(chart_title, fontsize = 15, fontweight = "bold", color = CHART_INK)
-    fig.text(0.5, 0.925, f"{feature_label} features, mean of the validation folds. The star is the best Macro-F1 setting.",
-             ha = "center", fontsize = 10, color = CHART_INK_SOFT)
-    fig.tight_layout(rect = (0, 0.08, 1, 0.915))
+        fig.suptitle("KNN Tuning: Macro-F1 and Macro Precision by k and p")
+    else:
+        fig.suptitle("KNN Tuning: Macro-F1 and Macro Precision by k, p and month weight")
+    fig.tight_layout(rect = (0, 0.05, 1, 0.97))
 
     os.makedirs(folder, exist_ok = True)
     save_figure(fig, f"{folder}/knn_tuning_{tag}.png")
@@ -422,6 +451,7 @@ KNN_K = 7
 KNN_P = 2.0
 KNN_MONTH_WEIGHT = 2
 NAIVE_BAYES_SMOOTHING = 1.0
+LIDSTONE_SMOOTHING = 0.001
 RESULTS_FILE = "classification_results.csv"
 
 # makes one csv row from the results of a model or a baseline
@@ -511,6 +541,11 @@ def main():
         nb_model = training_classifier(x_train_scaled, y_train, NAIVE_BAYES_SMOOTHING, group_sizes)
         predictions["Naive Bayes"] = prediction(x_test_scaled, *nb_model)
         settings["Naive Bayes"] = f"smoothing k={NAIVE_BAYES_SMOOTHING}"
+
+        # after further testing lidstone smoothing with a very small k gave better results than the default k=1
+        nbl_model = training_classifier(x_train_scaled, y_train, LIDSTONE_SMOOTHING, group_sizes)
+        predictions["Naive Bayes (Lidstone)"] = prediction(x_test_scaled, *nbl_model)
+        settings["Naive Bayes (Lidstone)"] = f"smoothing k={LIDSTONE_SMOOTHING}"
  
         print("Training Perceptron...")
         # the training prints every epoch, so the printing is hidden here
@@ -540,6 +575,7 @@ def main():
         writer.writerows(rows)
 
     plot_model(rows, "results/graphs")
+    plot_naive_bayes(rows, "results/graphs")
 
     # shows a summary of everything that was saved
     print("\n================ SUMMARY ================")
