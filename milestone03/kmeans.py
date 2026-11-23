@@ -1,5 +1,3 @@
-# Milestone 3 K-Means Clustering on BIR Tax Collection Data
-
 import os
 import csv
 import math
@@ -9,16 +7,8 @@ from filereader import read_collection, monthly_growth
 
 RESTARTS = 100 # how many times k-means is run for each k (the best run is kept)
 
-# asks which data to cluster
-def ask_mode():
-  while True:
-    mode = input("Cluster 1 = one point per region, 2 = one point per region and year (more points): ").strip()
-    if mode == "1" or mode == "2":
-      return int(mode)
-    print("Enter 1 or 2!")
-
 # asks for the number of clusters, 0 means pick the best k
-def ask_k(max_k):
+def ask_k(max_k, label):
   while True:
     try:
       k = int(input(f"Enter the number of clusters, k (0 to pick the best k from 2 to {max_k}): "))
@@ -492,11 +482,8 @@ def year_consistency(names, labels):
   return rows
 
 # calls the other functions
-def kmeans_tax_collection():
-  collections = read_collection()
-  if collections is None:
-    return
-  mode = ask_mode()
+# runs k-means for one mode, 1 = one point per region, 2 = one point per region and year
+def run_mode(collections, mode):
   tag = "region" if mode == 1 else "region_year"
   if mode == 1:
     names, rows = region_data(collections)
@@ -506,7 +493,7 @@ def kmeans_tax_collection():
     print("Not enough points to cluster.")
     return
   max_k = min(20, len(rows) - 1)
-  chosen_k = ask_k(max_k)
+  chosen_k = ask_k(max_k, tag)
   random_gen = random.Random(170)
   for folder in ["tables", "graphs"]:
     os.makedirs(f"results/{folder}", exist_ok=True)
@@ -525,10 +512,6 @@ def kmeans_tax_collection():
   for result in results:
     print(f"{result['k']:<5}{result['inertia']:<14.2f}{result['silhouette']:<12.4f}{result['smallest']:<18}")
   print(f"Elbow k: {elbow_k}")
-  if [result["smallest"] for result in results if result["k"] == elbow_k][0] < 2:
-    print("Note: at the elbow k, one cluster has only 1 point")
-  print(f"Best silhouette k (no cluster with 1 point): {best_k}")
-  print(f"Balanced k (elbow k if its silhouette is within 0.05 of the best): {balanced_k}")
   if chosen_k == 0:
     chosen_k = balanced_k
 
@@ -558,6 +541,13 @@ def kmeans_tax_collection():
   # plot_profiles(profiles, "results/figures", tag)
   # plot_scatter(names, rows, final["labels"], chosen_k, "results/figures", tag)
   print("\nTables saved inside results/tables, graphs inside results/graphs")
+
+# runs k-means with one point per region
+def kmeans_tax_collection():
+  collections = read_collection()
+  if collections is None:
+    return
+  run_mode(collections, 1)
 
 if __name__ == "__main__":
   kmeans_tax_collection()
