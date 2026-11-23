@@ -2,6 +2,7 @@
 
 # imports
 import math
+import os
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -278,6 +279,133 @@ def save_figure(figure, path):
       print(f"Could not save {fallback} either ({second_error}).")
 
 # (OwO) --------------------------------------------------------------------------
+# KNN Tuning Plotting
+# (OwO) --------------------------------------------------------------------------
+
+# KEEP copy of colors heeeere (O-O)
+CHART_CREAM = "#F2EAE0"
+CHART_TEAL = "#B4D3D9"
+CHART_LAVENDER = "#BDA6CE"
+CHART_PURPLE = "#9B8EC7"
+CHART_PURPLE_DEEP = "#6A5AB0"
+CHART_INK = "#2D2850"
+CHART_INK_SOFT = "#5B5780"
+
+# line chart of the validation macro f1 (top row) and macro precision (bottom row)
+# x axis is k, one line for each p, one column for each month weight
+# details is the list that tune_knn fills when it gets details = []
+def plot_knn_tuning(details, folder, tag, feature_label):
+    if not details:
+        print("No tuning results to plot.")
+        return
+
+    # gets every value of each factor, finds the best row (the first best one wins ties, same as the tuning)
+    p_values = []
+    k_values = []
+    weights = []
+    lookup = {}
+    best = details[0]
+    for row in details:
+        if row["p"] not in p_values:
+            p_values.append(row["p"])
+        if row["k"] not in k_values:
+            k_values.append(row["k"])
+        if row["month_weight"] not in weights:
+            weights.append(row["month_weight"])
+        lookup[(row["p"], row["k"], row["month_weight"])] = row
+        if row["macro_f1"] > best["macro_f1"]:
+            best = row
+    p_values.sort()
+    k_values.sort()
+    weights.sort()
+
+    line_colors = [CHART_PURPLE_DEEP, CHART_PURPLE, CHART_TEAL]
+    line_markers = ["o", "s", "^"]
+    metrics = [("macro_f1", "Macro-F1"), ("macro_precision", "Macro Precision")]
+    x_positions = list(range(len(k_values)))
+
+    fig, axes = plt.subplots(2, len(weights), figsize = (max(9.0, 4.4 * len(weights) + 1.2), 7.6), sharex = True, sharey = "row", squeeze = False)
+    fig.patch.set_facecolor(CHART_CREAM)
+
+    for row_index in range(2):
+        metric, metric_name = metrics[row_index]
+
+        # same y range for the whole row, with room above for the label of the best point
+        all_values = [row[metric] for row in details]
+        low = min(all_values) - 0.03
+        high = max(all_values) + 0.10
+
+        for column in range(len(weights)):
+            weight = weights[column]
+            ax = axes[row_index][column]
+            ax.set_facecolor("#FBF8F4")
+
+            # one line for each p
+            for i in range(len(p_values)):
+                p = p_values[i]
+                values = []
+                for k in k_values:
+                    values.append(lookup[(p, k, weight)][metric])
+                ax.plot(x_positions, values, color = line_colors[i % 3], marker = line_markers[i % 3],
+                        markersize = 7, markeredgecolor = CHART_INK_SOFT, markeredgewidth = 0.8,
+                        linewidth = 2.4, label = f"p = {p:g}")
+
+            # star on the best macro f1 setting (shown in both rows so the precision there can be read)
+            if weight == best["month_weight"]:
+                best_x = k_values.index(best["k"])
+                best_y = lookup[(best["p"], best["k"], weight)][metric]
+                ax.scatter([best_x], [best_y], marker = "*", s = 330, color = CHART_INK, edgecolor = "white", linewidth = 1.0, zorder = 5)
+                label_align = "center"
+                label_shift = 0
+                if best_x <= 1:
+                    label_align = "left"
+                    label_shift = -8
+                elif best_x >= len(k_values) - 2:
+                    label_align = "right"
+                    label_shift = 8
+                ax.annotate(f"best: k = {best['k']}, p = {best['p']:g}", (best_x, best_y), xytext = (label_shift, 16),
+                            textcoords = "offset points", ha = label_align, fontsize = 9, fontweight = "bold", color = CHART_INK)
+
+            # looks
+            ax.set_ylim(low, high)
+            ax.set_xlim(-0.5, len(k_values) - 0.5)
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels([str(k) for k in k_values])
+            ax.grid(True, color = CHART_LAVENDER, alpha = 0.4, linewidth = 0.8)
+            ax.set_axisbelow(True)
+            ax.tick_params(colors = CHART_INK_SOFT)
+            for side in ("top", "right"):
+                ax.spines[side].set_visible(False)
+            for side in ("left", "bottom"):
+                ax.spines[side].set_color(CHART_LAVENDER)
+
+            if row_index == 0:
+                if feature_label == "base":
+                    ax.set_title("month_sin / month_cos (no month weight)", fontsize = 11, color = CHART_INK, fontweight = "bold")
+                else:
+                    ax.set_title(f"Month weight = {weight}", fontsize = 11, color = CHART_INK, fontweight = "bold")
+            if column == 0:
+                ax.set_ylabel(f"{metric_name}\n(validation mean)", color = CHART_INK)
+            if row_index == 1:
+                ax.set_xlabel("k (number of neighbors)", color = CHART_INK)
+
+    # one legend for the p lines
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc = "lower center", ncol = len(p_values), frameon = False, fontsize = 10,
+               title = "Minkowski distance p (1 = city block, 2 = straight line)", title_fontsize = 9)
+    chart_title = "KNN Tuning: Macro-F1 and Macro Precision by k, p and month weight"
+    if feature_label == "base":
+        chart_title = "KNN Tuning: Macro-F1 and Macro Precision by k and p"
+    fig.suptitle(chart_title, fontsize = 15, fontweight = "bold", color = CHART_INK)
+    fig.text(0.5, 0.925, f"{feature_label} features, mean of the validation folds. The star is the best Macro-F1 setting.",
+             ha = "center", fontsize = 10, color = CHART_INK_SOFT)
+    fig.tight_layout(rect = (0, 0.08, 1, 0.915))
+
+    os.makedirs(folder, exist_ok = True)
+    save_figure(fig, f"{folder}/knn_tuning_{tag}.png")
+    plt.close(fig)
+
+# (OwO) --------------------------------------------------------------------------
 # Main
 # (OwO) --------------------------------------------------------------------------
 # runs all classification models on each feature set and writes their results in a csv
@@ -360,10 +488,12 @@ def main():
         knn_p = KNN_P
         knn_weight = KNN_MONTH_WEIGHT
         knn_note = ""
+        knn_details = [] # filled by tune_knn, used for the tuning chart
         if TUNE_KNN:
             print("\nTuning KNN on the validation folds...")
-            knn_k, knn_p, knn_weight, tuning_results, validate_years = tune_knn(x_train_used, y_train, years_train, month_cols = month_cols)
+            knn_k, knn_p, knn_weight, tuning_results, validate_years = tune_knn(x_train_used, y_train, years_train, month_cols = month_cols, details = knn_details)
             show_tuning(tuning_results, validate_years, knn_k, knn_p, knn_weight, f"knn_tuning_{tag}.csv")
+            plot_knn_tuning(knn_details, "results/graphs", tag, feature_set)
             knn_note = " (chosen by validation)"
 
         x_train_knn = x_train_scaled

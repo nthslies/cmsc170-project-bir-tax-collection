@@ -495,6 +495,48 @@ header#top {
     background: rgba(255, 255, 255, 0.4);
 }
 
+/* ---------- result figures ---------- */
+/* two figures side by side on wide screens, stacked on small ones */
+.figure-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 22px;
+    align-items: start;
+    margin: 18px 0 28px;
+}
+
+.figure {
+    margin: 0 auto 28px;
+    text-align: center;
+}
+
+.figure-row .figure {
+    margin: 0;
+}
+
+.results .figure img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 45vh;
+    margin: 0 auto;
+    object-fit: contain;
+}
+
+/* the single model-comparison chart gets a little more room */
+.results .figure.single img {
+    max-width: min(100%, 520px);
+    max-height: 50vh;
+}
+
+.figure figcaption {
+    max-width: 520px;
+    margin: 12px auto 0;
+    font-size: 0.93rem;
+    color: var(--ink-soft);
+}
+
 /* ---------- footer ---------- */
 footer#bottom {
     width: 120px;

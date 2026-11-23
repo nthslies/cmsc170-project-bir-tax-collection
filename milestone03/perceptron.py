@@ -8,14 +8,14 @@ from normalize import normalize_data
 from evaluation import evaluate_model, make_baselines, CLASS_NAMES
 
 
-# def add_month_onehot(x):
-#     n_regions = x.shape[1] - 7
-#     months = np.zeros((len(x), 12))
-#     for i in range(len(x)):
-#         angle = math.atan2(x[i][n_regions], x[i][n_regions + 1]) % (2 * math.pi)
-#         month = int(round(angle / (2 * math.pi) * 12)) % 12
-#         months[i][month] = 1.0
-#     return np.hstack([x, months]) 
+def add_month_onehot(x):
+    n_regions = x.shape[1] - 7
+    months = np.zeros((len(x), 12))
+    for i in range(len(x)):
+        angle = math.atan2(x[i][n_regions], x[i][n_regions + 1]) % (2 * math.pi)
+        month = int(round(angle / (2 * math.pi) * 12)) % 12
+        months[i][month] = 1.0
+    return np.hstack([x, months]) 
 
 # number of training rows the weights get wrong (used to keep the best weights, "pocket")
 def count_errors(w, x_full, d):
@@ -95,7 +95,7 @@ def train_perceptron(x_train, y_train):
                 writer.writerow(row)
                 # updates weight vector
                 if y != d:
-                    w = w + r * (d - y) * x_full
+                    r * (d - y) * x_full
                     epoch_update += 1
 
             # keeps the weights with the fewest training errors so far
@@ -184,7 +184,6 @@ def save_results(results):
 
     print("Results saved to perceptron_training.csv")
 
-
 def main():
     # loads data
     x_train, y_train, x_test, y_test = load_data()
@@ -192,7 +191,7 @@ def main():
     if x_train is None:
         return
     # normalizes data
-    x_train_scaled, x_test_scaled = normalize_data(x_train, x_test)
+    x_train_scaled, x_test_scaled = normalize_data(add_month_onehot(x_train), add_month_onehot(x_test))
     # train perceptron
     print("Training Perceptron")
     w = train_perceptron(x_train_scaled, y_train)

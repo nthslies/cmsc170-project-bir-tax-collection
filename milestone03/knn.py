@@ -126,7 +126,9 @@ def year_folds(years_train, first_validate_year = 2022):
 # tries every p, k and month weight on the validation folds and picks the best by mean macro f1
 # x_train must be the raw features, each fold is normalized with its own training rows only
 # month_cols is (first month column, last month column + 1) when the features have the month one-hot columns, else None
-def tune_knn(x_train, y_train, years_train, k_values = K_VALUES, p_values = P_VALUES, month_cols = None, month_weights = MONTH_WEIGHTS):
+# details is an optional empty list, when given it gets one dictionary for every p, k and month weight
+# with the mean validation macro f1 and macro precision, used to plot the tuning trends
+def tune_knn(x_train, y_train, years_train, k_values = K_VALUES, p_values = P_VALUES, month_cols = None, month_weights = MONTH_WEIGHTS, details = None):
     folds = year_folds(years_train)
 
     # without month columns there is nothing to weight
@@ -148,8 +150,10 @@ def tune_knn(x_train, y_train, years_train, k_values = K_VALUES, p_values = P_VA
     for p in p_values:
         for weight in month_weights:
             scores = {}
+            precisions = {}
             for k in usable_k:
                 scores[k] = []
+                precisions[k] = []
 
             for validate_year, train_indices, validate_indices in folds:
                 # splits and normalizes using the fold's training rows only
@@ -168,11 +172,16 @@ def tune_knn(x_train, y_train, years_train, k_values = K_VALUES, p_values = P_VA
                     predictions = []
                     for sorted_labels in all_labels:
                         predictions.append(vote(sorted_labels, k))
-                    scores[k].append(compute_metrics(y_fold_validate, predictions)["macro_f1"])
+                    fold_metrics = compute_metrics(y_fold_validate, predictions)
+                    scores[k].append(fold_metrics["macro_f1"])
+                    precisions[k].append(fold_metrics["macro_precision"])
 
             for k in usable_k:
                 mean_score = sum(scores[k]) / len(scores[k])
                 results.append([p, k, weight] + scores[k] + [mean_score])
+                if details is not None:
+                    details.append({"p": p, "k": k, "month_weight": weight, "macro_f1": mean_score,
+                                    "macro_precision": sum(precisions[k]) / len(precisions[k])})
 
     # picks the highest mean, the first one wins ties (smaller p, then smaller weight, then smaller k)
     best = results[0]
