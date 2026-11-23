@@ -495,6 +495,43 @@ header#top {
     background: rgba(255, 255, 255, 0.4);
 }
 
+/* ---------- result figures ---------- */
+/* two figures side by side on wide screens, stacked on small ones */
+.figure-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 22px;
+    align-items: start;
+    margin: 18px 0 28px;
+}
+
+.figure {
+    margin: 0 auto 28px;
+    text-align: center;
+}
+
+.figure-row .figure {
+    margin: 0;
+}
+
+/* keeps the graphs small so they do not fill the whole page */
+.figure img {
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto;
+}
+
+.figure.single img {
+    max-width: 420px;
+}
+
+.figure figcaption {
+    max-width: 520px;
+    margin: 12px auto 0;
+    font-size: 0.93rem;
+    color: var(--ink-soft);
+}
+
 /* ---------- footer ---------- */
 footer#bottom {
     width: 120px;
