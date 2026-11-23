@@ -9,6 +9,7 @@ from evaluation import evaluate_model, make_baselines, compute_metrics
 K_VALUES = [1, 3, 5, 7, 9, 11, 15, 21]
 P_VALUES = [1, 2, 3]
 # how much the month columns count in the distance, only used with the month one-hot features
+# d(x, v) = (sum(abs(x sub j - v subj))raised to p + (sum(abs((w * x sub m) - (w * v sub m)))raised to p))raised to 1/p
 MONTH_WEIGHTS = [1, 2, 3]
 TUNING_FILE = "knn_tuning.csv"
 
