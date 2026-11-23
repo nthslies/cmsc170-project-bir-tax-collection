@@ -95,7 +95,7 @@ def train_perceptron(x_train, y_train):
                 writer.writerow(row)
                 # updates weight vector
                 if y != d:
-                    w = w + r * (d - y) * x_full
+                    r * (d - y) * x_full
                     epoch_update += 1
 
             # keeps the weights with the fewest training errors so far
@@ -184,7 +184,6 @@ def save_results(results):
 
     print("Results saved to perceptron_training.csv")
 
-
 def main():
     # loads data
     x_train, y_train, x_test, y_test = load_data()
@@ -192,7 +191,7 @@ def main():
     if x_train is None:
         return
     # normalizes data
-    x_train_scaled, x_test_scaled = normalize_data(x_train, x_test)
+    x_train_scaled, x_test_scaled = normalize_data(add_month_onehot(x_train), add_month_onehot(x_test))
     # train perceptron
     print("Training Perceptron")
     w = train_perceptron(x_train_scaled, y_train)
