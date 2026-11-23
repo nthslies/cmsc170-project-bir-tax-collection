@@ -230,8 +230,9 @@ def plot_model(rows, folder):
     macro_f1s = []
 
     for row in rows:
-        if row[1] == "model":
-            print("DEBUG ROW:", row)
+        if row[1] == "model" and "one-hot" in row[2]:
+            if row[0] == "Naive Bayes":
+                continue
             models.append(f"{row[0]} ({row[2]})")
             accuracies.append(float(row[4]))
             macro_f1s.append(float(row[7]))
@@ -240,7 +241,7 @@ def plot_model(rows, folder):
         return
     data = list(zip(accuracies, macro_f1s))
     metrics = ["Accuracy", "Macro F1"]
-    colors = ["blue", "orange"]
+    colors = ["purple", "lavender"]
     
     dim = len(data[0])
     w = 0.6
@@ -251,7 +252,9 @@ def plot_model(rows, folder):
     for i in range(len(data[0])):
         y = [d[i] for d in data]
         b = ax.bar(x + i * dimw, y, 
-                dimw, 
+                dimw,
+                color = colors[i],
+                label = metrics[i],
                 bottom = 0.001)
 
     ax.set_xticks(x + w / 2 - dimw / 2)
@@ -261,6 +264,50 @@ def plot_model(rows, folder):
     ax.legend(metrics)
 
     save_figure(fig, f"{folder}/model_performance.png")
+    plt.close(fig)
+# (OwO) --------------------------------------------------------------------------
+# Naive Bayes Plotting
+# (OwO) -------------------------------------------------------------------------- 
+def plot_naive_bayes(rows, folder):
+    models = []
+    accuracies = []
+    macro_f1s = []
+
+    for row in rows:
+        if row[1] == "model":
+            if "Naive Bayes" in row[0]:
+                if "one-hot" in row[2]:
+                    models.append(f"{row[0]} ({row[2]})")
+                    accuracies.append(float(row[4]))
+                    macro_f1s.append(float(row[7]))
+    if not models:
+        print("No models found to plot.")
+        return
+    data = list(zip(accuracies, macro_f1s))
+    metrics = ["Accuracy", "Macro F1"]
+    colors = ["purple", "lavender"]
+    
+    dim = len(data[0])
+    w = 0.6
+    dimw = w / dim
+
+    fig, ax = plt.subplots()
+    x = np.arange(len(data))
+    for i in range(len(data[0])):
+        y = [d[i] for d in data]
+        b = ax.bar(x + i * dimw, y, 
+                dimw,
+                color = colors[i],
+                label = metrics[i],
+                bottom = 0.001)
+
+    ax.set_xticks(x + w / 2 - dimw / 2)
+    ax.set_xticklabels(models)
+    ax.set_title("Naive Bayes Performance Comparison")
+    ax.set_ylabel("Score")
+    ax.legend(metrics)
+
+    save_figure(fig, f"{folder}/model_naivebayes.png")
     plt.close(fig)
 
 # added from kmeans
@@ -294,6 +341,7 @@ KNN_K = 7
 KNN_P = 2.0
 KNN_MONTH_WEIGHT = 2
 NAIVE_BAYES_SMOOTHING = 1.0
+LIDSTONE_SMOOTHING = 0.001
 RESULTS_FILE = "classification_results.csv"
 
 # makes one csv row from the results of a model or a baseline
@@ -381,6 +429,11 @@ def main():
         nb_model = training_classifier(x_train_scaled, y_train, NAIVE_BAYES_SMOOTHING, group_sizes)
         predictions["Naive Bayes"] = prediction(x_test_scaled, *nb_model)
         settings["Naive Bayes"] = f"smoothing k={NAIVE_BAYES_SMOOTHING}"
+
+        # after further testing lidstone smoothing with a very small k gave better results than the default k=1
+        nbl_model = training_classifier(x_train_scaled, y_train, LIDSTONE_SMOOTHING, group_sizes)
+        predictions["Naive Bayes (Lidstone)"] = prediction(x_test_scaled, *nbl_model)
+        settings["Naive Bayes (Lidstone)"] = f"smoothing k={LIDSTONE_SMOOTHING}"
  
         print("Training Perceptron...")
         # the training prints every epoch, so the printing is hidden here
@@ -410,6 +463,7 @@ def main():
         writer.writerows(rows)
 
     plot_model(rows, "results/graphs")
+    plot_naive_bayes(rows, "results/graphs")
 
     # shows a summary of everything that was saved
     print("\n================ SUMMARY ================")
