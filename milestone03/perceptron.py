@@ -7,7 +7,6 @@ from filereader import load_data
 from normalize import normalize_data
 from evaluation import evaluate_model, make_baselines, CLASS_NAMES
 
-
 # number of training rows the weights get wrong (used to keep the best weights, "pocket")
 def count_errors(w, x_full, d):
     predicted = np.where(x_full @ w > 0, 1.0, -1.0)
@@ -17,7 +16,7 @@ def count_errors(w, x_full, d):
 def train_perceptron(x_train, y_train):
     # converts labels from {0,1} to {1,0} for perceptron training
     y_train = np.where(y_train == 0, -1, 1)
-    r = 0.8515 # learning rate set to 0.8515
+    r = 0.5 # learning rate
     b = 0.5 # bias
     # prepares training data
     data = []
@@ -86,7 +85,7 @@ def train_perceptron(x_train, y_train):
                 writer.writerow(row)
                 # updates weight vector
                 if y != d:
-                    r * (d - y) * x_full
+                    w = w + r * (d - y) * x_full
                     epoch_update += 1
 
             # keeps the weights with the fewest training errors so far
@@ -110,9 +109,6 @@ def train_perceptron(x_train, y_train):
 
         # saves final weights and convergence status
         writer.writerow(["Final Adjusted Weights"])
-        writer.writerow([f"{weight:.4f}" for weight in w])
-        writer.writerow(["Final Epoch Weights"])
-        writer.writerow([f"{weight:.4f}" for weight in w])
         writer.writerow(["Best Pocket Weights"])
         writer.writerow([f"{weight:.4f}" for weight in best_w])
         writer.writerow(["Best Epoch", best_epoch])
@@ -182,7 +178,7 @@ def main():
     if x_train is None:
         return
     # normalizes data
-    x_train_scaled, x_test_scaled = normalize_data(add_month_onehot(x_train), add_month_onehot(x_test))
+    x_train_scaled, x_test_scaled = normalize_data(x_train, x_test)
     # train perceptron
     print("Training Perceptron")
     w = train_perceptron(x_train_scaled, y_train)
