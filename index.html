@@ -190,7 +190,19 @@
         <h2>Model Comparison</h2>
         <figure class = "figure single">
             <img src = "milestone03/results/graphs/model_performance.png" alt="Accuracy and macro F1 of KNN, Naive Bayes and Perceptron">
-            <figcaption>KNN is the best of the three classifiers, with 0.8750 accuracy and 0.8749 macro F1. The Perceptron follows at 0.6898 and 0.6833, and Naive Bayes is lowest at 0.6481 and 0.6445.</figcaption>
+            <figcaption>KNN is the best of the three classifiers, with 0.9120 accuracy and 0.9117 macro F1. The Perceptron follows at 0.6898 and 0.6833, and Naive Bayes is lowest at 0.6481 and 0.6445.</figcaption>
+        </figure>
+
+        <h2>Naive-Bayes</h2>
+        <figure class = "figure single">
+            <img src = "milestone03/results/graphs/model_naivebayes.png" alt="Performance of Naive-Bayes model with a bar graph">
+            <figcaption>Naive-Bayes with Lidstone implementation showed higher result and went over the baselines.</figcaption>
+        </figure>
+
+        <h2>KNN Trends</h2>
+        <figure class = "figure single">
+            <img src = "milestone03/results/graphs/knn_tuning_month_onehot.png" alt="KNN graph trends on Macro-F1 and Precision ocross k, p, and month weight.">
+            <figcaption>It shows that both values peak at k=11, p=3, and month weight = 1. With the p-value not having much difference. </figcaption>
         </figure>
 
         <h2>K-Means: Choosing the Number of Clusters</h2>
@@ -205,10 +217,6 @@
             </figure>
         </div>
     </div>
-
-    <footer id = "bottom">
-
-    </footer>
 </div>
 </body>
 </html>
