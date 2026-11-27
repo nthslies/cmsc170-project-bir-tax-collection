@@ -337,7 +337,8 @@ EDGE_COLOR = "#5B5780"
 # line chart of the validation macro f1 (top row) and macro precision (bottom row)
 # x axis is k, one line for each p, one column for each month weight
 # details is the list that tune_knn fills when it gets details = []
-def plot_knn_tuning(details, folder, tag, feature_label):
+# test_results is the compute_metrics result of the chosen setting on the 2024 test data, it is drawn as a dashed line
+def plot_knn_tuning(details, folder, tag, feature_label, test_results = None):
     from matplotlib.lines import Line2D
 
     if not details:
@@ -375,8 +376,13 @@ def plot_knn_tuning(details, folder, tag, feature_label):
 
         # same y range for the whole row
         all_values = [row[metric] for row in details]
+        if test_results is not None:
+            all_values.append(test_results[metric])
         low = min(all_values) - 0.03
         high = max(all_values) + 0.03
+        # a little more room above the test line for its label
+        if test_results is not None:
+            high = max(all_values) + 0.055
 
         for column in range(len(weights)):
             weight = weights[column]
@@ -398,6 +404,15 @@ def plot_knn_tuning(details, folder, tag, feature_label):
                 best_y = lookup[(best["p"], best["k"], weight)][metric]
                 ax.plot([best_x], [best_y], color = LINE_COLORS[best_index % 3], marker = LINE_MARKERS[best_index % 3],
                         markersize = 14, markeredgecolor = EDGE_COLOR, markeredgewidth = 1.2, linestyle = "none", zorder = 5)
+
+                # the score of the same setting on the 2024 test data, trained on all the years before 2024
+                if test_results is not None:
+                    test_y = test_results[metric]
+                    ax.axhline(test_y, color = EDGE_COLOR, linestyle = "--", linewidth = 1.2, zorder = 1)
+                    ax.plot([best_x, best_x], [best_y, test_y], color = EDGE_COLOR, linestyle = ":", linewidth = 1.2, zorder = 2)
+                    ax.plot([best_x], [test_y], color = EDGE_COLOR, marker = "D", markersize = 9,
+                            markeredgecolor = "white", markeredgewidth = 1.0, linestyle = "none", zorder = 6)
+                    ax.text(len(k_values) - 0.6, test_y + 0.004, f"2024 test: {test_y:.4f}", ha = "right", va = "bottom", fontsize = 9, color = EDGE_COLOR)
 
             ax.set_ylim(low, high)
             ax.set_xlim(-0.5, len(k_values) - 0.5)
@@ -422,13 +437,22 @@ def plot_knn_tuning(details, folder, tag, feature_label):
     handles.append(Line2D([0], [0], color = LINE_COLORS[best_index % 3], marker = LINE_MARKERS[best_index % 3], markersize = 12,
                           markeredgecolor = EDGE_COLOR, markeredgewidth = 1.2, linestyle = "none"))
     labels.append(best_label)
-    fig.legend(handles, labels, loc = "lower center", ncol = len(handles), frameon = False)
+    if test_results is not None:
+        handles.append(Line2D([0], [0], color = EDGE_COLOR, linestyle = "--", marker = "D", markersize = 8,
+                              markeredgecolor = "white", markeredgewidth = 1.0))
+        labels.append("2024 test score at the best setting")
+    legend_columns = len(handles)
+    legend_space = 0.05
+    if len(weights) == 1:
+        legend_columns = 3
+        legend_space = 0.09
+    fig.legend(handles, labels, loc = "lower center", ncol = legend_columns, frameon = False)
 
     if feature_label == "base":
         fig.suptitle("KNN Tuning: Macro-F1 and Macro Precision by k and p")
     else:
         fig.suptitle("KNN Tuning: Macro-F1 and Macro Precision by k, p and month weight")
-    fig.tight_layout(rect = (0, 0.05, 1, 0.97))
+    fig.tight_layout(rect = (0, legend_space, 1, 0.97))
 
     os.makedirs(folder, exist_ok = True)
     save_figure(fig, f"{folder}/knn_tuning_{tag}.png")
@@ -523,7 +547,6 @@ def main():
             print("\nTuning KNN on the validation folds...")
             knn_k, knn_p, knn_weight, tuning_results, validate_years = tune_knn(x_train_used, y_train, years_train, month_cols = month_cols, details = knn_details)
             show_tuning(tuning_results, validate_years, knn_k, knn_p, knn_weight, f"knn_tuning_{tag}.csv")
-            plot_knn_tuning(knn_details, "results/graphs", tag, feature_set)
             knn_note = " (chosen by validation)"
 
         x_train_knn = x_train_scaled
@@ -535,6 +558,9 @@ def main():
             knn_setting += f"; month weight={knn_weight}"
         print("\nRunning KNN...")
         predictions["KNN"] = knn_predict(x_train_knn, y_train, x_test_knn, knn_k, knn_p)
+        # the tuning chart also shows the 2024 test score of the chosen setting
+        if TUNE_KNN:
+            plot_knn_tuning(knn_details, "results/graphs", tag, feature_set, compute_metrics(y_test, predictions["KNN"]))
         settings["KNN"] = knn_setting + knn_note
  
         print("Running Naive Bayes...")
